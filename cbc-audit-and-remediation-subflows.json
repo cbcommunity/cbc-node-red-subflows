@@ -1,0 +1,872 @@
+[{
+	"id": "ee74f109.d3567",
+	"type": "subflow",
+	"name": "stop-query",
+	"info": "Stop a LiveQuery Run that is running.\n\n`msg.payload` should be a string of the `query_id`.\n\n**RBAC Permissions Required**\n\n|Permission (.notation name)\t|Operation(s)|\n|---|---|\n|livequery.manage\t|UPDATE|\n\n----\n\n[See Documentation](https://developer.carbonblack.com/reference/carbon-black-cloud/cb-liveops/latest/livequery-api/#stop-query-run)",
+	"category": "CBC Audit and Remediation",
+	"in": [{
+		"x": 280,
+		"y": 200,
+		"wires": [{
+			"id": "4e76ae85.c2615"
+		}]
+	}],
+	"out": [{
+		"x": 1540,
+		"y": 160,
+		"wires": [{
+			"id": "d3cf1e20.41de3",
+			"port": 0
+		}]
+	}, {
+		"x": 1540,
+		"y": 240,
+		"wires": [{
+			"id": "10c42b8a.8c9324",
+			"port": 0
+		}]
+	}],
+	"env": [],
+	"color": "#1c9c9b",
+	"icon": "node-red/leveldb.png",
+	"status": {
+		"x": 520,
+		"y": 140,
+		"wires": [{
+			"id": "e6bbd5a6.1c7438",
+			"port": 0
+		}]
+	}
+}, {
+	"id": "541e7f4f.b2f0d",
+	"type": "function",
+	"z": "ee74f109.d3567",
+	"name": "build http request",
+	"func": "msg.url = [msg.cb.url, 'livequery/v1/orgs', msg.cb.org_key, 'runs', msg.payload, 'status'].join('/');\n\nmsg.headers = {\n    // The ThreatHunter endpoints use the legacy API key\n    'X-Auth-Token': [msg.cb.custom_api_key, msg.custom_cb.api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nmsg.payload = {\n    \"status\": \"CANCELLED\"\n};\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 790,
+	"y": 200,
+	"wires": [
+		["9682806b.ffba8"]
+	]
+}, {
+	"id": "9682806b.ffba8",
+	"type": "http request",
+	"z": "ee74f109.d3567",
+	"name": "",
+	"method": "PUT",
+	"ret": "obj",
+	"paytoqs": false,
+	"url": "",
+	"tls": "",
+	"proxy": "",
+	"authType": "",
+	"x": 1010,
+	"y": 200,
+	"wires": [
+		["9a7c44b2.2739a8"]
+	]
+}, {
+	"id": "9a7c44b2.2739a8",
+	"type": "switch",
+	"z": "ee74f109.d3567",
+	"name": "status code",
+	"property": "statusCode",
+	"propertyType": "msg",
+	"rules": [{
+		"t": "eq",
+		"v": "200",
+		"vt": "num"
+	}, {
+		"t": "else"
+	}],
+	"checkall": "true",
+	"repair": false,
+	"outputs": 2,
+	"x": 1210,
+	"y": 200,
+	"wires": [
+		["d3cf1e20.41de3"],
+		["10c42b8a.8c9324"]
+	]
+}, {
+	"id": "4e76ae85.c2615",
+	"type": "function",
+	"z": "ee74f109.d3567",
+	"name": "set status",
+	"func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n    return;\n}\n\nnode.status({\n    fill: 'grey',\n    text: 'stopping query...'\n});\n\nmsg.delay = msg.cb.delay;\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 420,
+	"y": 200,
+	"wires": [
+		["257e7cf8.742ec4"]
+	]
+}, {
+	"id": "10c42b8a.8c9324",
+	"type": "function",
+	"z": "ee74f109.d3567",
+	"name": "set status",
+	"func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 1420,
+	"y": 240,
+	"wires": [
+		[]
+	]
+}, {
+	"id": "257e7cf8.742ec4",
+	"type": "delay",
+	"z": "ee74f109.d3567",
+	"name": "delay",
+	"pauseType": "delayv",
+	"timeout": "1",
+	"timeoutUnits": "seconds",
+	"rate": "1",
+	"nbRateUnits": "1",
+	"rateUnits": "second",
+	"randomFirst": "1",
+	"randomLast": "5",
+	"randomUnits": "seconds",
+	"drop": false,
+	"x": 590,
+	"y": 200,
+	"wires": [
+		["541e7f4f.b2f0d"]
+	]
+}, {
+	"id": "e6bbd5a6.1c7438",
+	"type": "status",
+	"z": "ee74f109.d3567",
+	"name": "",
+	"scope": ["4e76ae85.c2615", "10c42b8a.8c9324", "d3cf1e20.41de3"],
+	"x": 380,
+	"y": 140,
+	"wires": [
+		[]
+	]
+}, {
+	"id": "d3cf1e20.41de3",
+	"type": "function",
+	"z": "ee74f109.d3567",
+	"name": "set status",
+	"func": "node.status({\n    fill: 'green',\n    text: 'found process'\n});\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 1420,
+	"y": 160,
+	"wires": [
+		[]
+	]
+}, {
+	"id": "538f4839.6b5e78",
+	"type": "subflow",
+	"name": "get-query-history",
+	"info": "Get all LiveQuery results for a specific organization.\n\nSample `msg.payload`:\n\n    {\n        \"query\": \"efuykoprimz74d4ys5ugj5unqfphxpuz\",\n        \"rows\": \"25\",\n        \"sort\": [\n            {\n                \"field\": \"archive_time\",\n                \"order\": \"ASC\"\n            }\n        ],\n        \"start\": \"0\"\n    }\n\n**RBAC Permissions Required**\n\n|Permission (.notation name)\t|Operation(s)|\n|---|---|\n|livequery.manage\t|READ|\n\n----\n\n[See Documentation](https://developer.carbonblack.com/reference/carbon-black-cloud/cb-liveops/latest/livequery-api/#get-query-history)\n",
+	"category": "CBC Audit and Remediation",
+	"in": [{
+		"x": 400,
+		"y": 220,
+		"wires": [{
+			"id": "620b1e7f.5a181"
+		}]
+	}],
+	"out": [{
+		"x": 1660,
+		"y": 180,
+		"wires": [{
+			"id": "f757b011.1a82b",
+			"port": 0
+		}]
+	}, {
+		"x": 1660,
+		"y": 260,
+		"wires": [{
+			"id": "7d548480.ce539c",
+			"port": 0
+		}]
+	}],
+	"env": [],
+	"color": "#1c9c9b",
+	"icon": "node-red/leveldb.png",
+	"status": {
+		"x": 640,
+		"y": 160,
+		"wires": [{
+			"id": "4ca3106.13006f",
+			"port": 0
+		}]
+	}
+}, {
+	"id": "7a061f04.c7148",
+	"type": "function",
+	"z": "538f4839.6b5e78",
+	"name": "build http request",
+	"func": "msg.url = [msg.cb.url, 'livequery/v1/orgs', msg.cb.org_key, 'runs/_search'].join('/');\n\nmsg.headers = {\n    // The ThreatHunter endpoints use the legacy API key\n    'X-Auth-Token': [msg.cb.custom_api_key, msg.custom_cb.api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 910,
+	"y": 220,
+	"wires": [
+		["22f7112.cd132ee"]
+	]
+}, {
+	"id": "22f7112.cd132ee",
+	"type": "http request",
+	"z": "538f4839.6b5e78",
+	"name": "",
+	"method": "POST",
+	"ret": "obj",
+	"paytoqs": false,
+	"url": "",
+	"tls": "",
+	"proxy": "",
+	"authType": "",
+	"x": 1130,
+	"y": 220,
+	"wires": [
+		["5f7a504f.468a4"]
+	]
+}, {
+	"id": "5f7a504f.468a4",
+	"type": "switch",
+	"z": "538f4839.6b5e78",
+	"name": "status code",
+	"property": "statusCode",
+	"propertyType": "msg",
+	"rules": [{
+		"t": "eq",
+		"v": "200",
+		"vt": "num"
+	}, {
+		"t": "else"
+	}],
+	"checkall": "true",
+	"repair": false,
+	"outputs": 2,
+	"x": 1330,
+	"y": 220,
+	"wires": [
+		["f757b011.1a82b"],
+		["7d548480.ce539c"]
+	]
+}, {
+	"id": "620b1e7f.5a181",
+	"type": "function",
+	"z": "538f4839.6b5e78",
+	"name": "set status",
+	"func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n    return;\n}\n\nnode.status({\n    fill: 'grey',\n    text: 'getting query history...'\n});\n\nmsg.delay = msg.cb.delay;\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 540,
+	"y": 220,
+	"wires": [
+		["fb1513c8.99f7f"]
+	]
+}, {
+	"id": "7d548480.ce539c",
+	"type": "function",
+	"z": "538f4839.6b5e78",
+	"name": "set status",
+	"func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 1540,
+	"y": 260,
+	"wires": [
+		[]
+	]
+}, {
+	"id": "fb1513c8.99f7f",
+	"type": "delay",
+	"z": "538f4839.6b5e78",
+	"name": "delay",
+	"pauseType": "delayv",
+	"timeout": "1",
+	"timeoutUnits": "seconds",
+	"rate": "1",
+	"nbRateUnits": "1",
+	"rateUnits": "second",
+	"randomFirst": "1",
+	"randomLast": "5",
+	"randomUnits": "seconds",
+	"drop": false,
+	"x": 710,
+	"y": 220,
+	"wires": [
+		["7a061f04.c7148"]
+	]
+}, {
+	"id": "4ca3106.13006f",
+	"type": "status",
+	"z": "538f4839.6b5e78",
+	"name": "",
+	"scope": ["620b1e7f.5a181", "7d548480.ce539c", "f757b011.1a82b"],
+	"x": 500,
+	"y": 160,
+	"wires": [
+		[]
+	]
+}, {
+	"id": "f757b011.1a82b",
+	"type": "function",
+	"z": "538f4839.6b5e78",
+	"name": "set status",
+	"func": "node.status({\n    fill: 'green',\n    text: 'found process'\n});\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 1540,
+	"y": 180,
+	"wires": [
+		[]
+	]
+}, {
+	"id": "2b75917a.78b2fe",
+	"type": "subflow",
+	"name": "get-query-results",
+	"info": "Lists LiveQuery results for a given run ID.\n\nThis route uses pagination.\n\nSample `msg.payload`:\n\n    {\n      \"criteria\": {\n        \"device.id\": [\n          0\n        ],\n        \"device.name\": [\n          \"string\"\n        ],\n        \"fields.type\": [\n          \"active\"\n        ]\n      },\n      \"query\": \"string\",\n      \"rows\": 0,\n      \"sort\": [\n        {\n          \"fields.field\": \"string\",\n          \"fields.order\": \"ASC\"\n        }\n      ],\n      \"start\": 0\n    }\n\n>**Note:** The response schema changes according to the osquery SQL query. The following example response is only valid for the example query listed above.\n\n**RBAC Permissions Required**\n\n|Permission (.notation name)\t|Operation(s)|\n|---|---|\n|livequery.manage\t|READ|\n\n----\n\n[See Documentation](https://developer.carbonblack.com/reference/carbon-black-cloud/cb-liveops/latest/livequery-api/#get-query-run-results)",
+	"category": "CBC Audit and Remediation",
+	"in": [{
+		"x": 220,
+		"y": 200,
+		"wires": [{
+			"id": "41e57c61.4620e4"
+		}]
+	}],
+	"out": [{
+		"x": 1500,
+		"y": 160,
+		"wires": [{
+			"id": "3180882d.e251a8",
+			"port": 0
+		}]
+	}, {
+		"x": 1500,
+		"y": 240,
+		"wires": [{
+			"id": "259932ee.28364e",
+			"port": 0
+		}]
+	}],
+	"env": [],
+	"color": "#1c9c9b",
+	"icon": "node-red/leveldb.png",
+	"status": {
+		"x": 440,
+		"y": 140,
+		"wires": [{
+			"id": "195e2206.073d3e",
+			"port": 0
+		}]
+	}
+}, {
+	"id": "11d53e4a.320942",
+	"type": "function",
+	"z": "2b75917a.78b2fe",
+	"name": "build http request",
+	"func": "msg.url = [msg.cb.url, 'livequery/v1/orgs', msg.cb.org_key, 'runs', msg.payload].join('/');\n\nmsg.headers = {\n    // The ThreatHunter endpoints use the legacy API key\n    'X-Auth-Token': [msg.cb.custom_api_key, msg.custom_cb.api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 730,
+	"y": 200,
+	"wires": [
+		["637bc743.5f9078"]
+	]
+}, {
+	"id": "637bc743.5f9078",
+	"type": "http request",
+	"z": "2b75917a.78b2fe",
+	"name": "",
+	"method": "POST",
+	"ret": "obj",
+	"paytoqs": false,
+	"url": "",
+	"tls": "",
+	"proxy": "",
+	"authType": "",
+	"x": 950,
+	"y": 200,
+	"wires": [
+		["12da80c1.d5a67f"]
+	]
+}, {
+	"id": "12da80c1.d5a67f",
+	"type": "switch",
+	"z": "2b75917a.78b2fe",
+	"name": "status code",
+	"property": "statusCode",
+	"propertyType": "msg",
+	"rules": [{
+		"t": "eq",
+		"v": "200",
+		"vt": "num"
+	}, {
+		"t": "else"
+	}],
+	"checkall": "true",
+	"repair": false,
+	"outputs": 2,
+	"x": 1150,
+	"y": 200,
+	"wires": [
+		["3180882d.e251a8"],
+		["259932ee.28364e"]
+	]
+}, {
+	"id": "41e57c61.4620e4",
+	"type": "function",
+	"z": "2b75917a.78b2fe",
+	"name": "set status",
+	"func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n    return;\n}\n\nnode.status({\n    fill: 'grey',\n    text: 'running query...'\n});\n\nmsg.delay = msg.cb.delay;\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 360,
+	"y": 200,
+	"wires": [
+		["3e5750b5.1800c"]
+	]
+}, {
+	"id": "259932ee.28364e",
+	"type": "function",
+	"z": "2b75917a.78b2fe",
+	"name": "set status",
+	"func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 1360,
+	"y": 240,
+	"wires": [
+		[]
+	]
+}, {
+	"id": "3e5750b5.1800c",
+	"type": "delay",
+	"z": "2b75917a.78b2fe",
+	"name": "delay",
+	"pauseType": "delayv",
+	"timeout": "1",
+	"timeoutUnits": "seconds",
+	"rate": "1",
+	"nbRateUnits": "1",
+	"rateUnits": "second",
+	"randomFirst": "1",
+	"randomLast": "5",
+	"randomUnits": "seconds",
+	"drop": false,
+	"x": 530,
+	"y": 200,
+	"wires": [
+		["11d53e4a.320942"]
+	]
+}, {
+	"id": "195e2206.073d3e",
+	"type": "status",
+	"z": "2b75917a.78b2fe",
+	"name": "",
+	"scope": ["41e57c61.4620e4", "259932ee.28364e", "3180882d.e251a8"],
+	"x": 320,
+	"y": 140,
+	"wires": [
+		[]
+	]
+}, {
+	"id": "3180882d.e251a8",
+	"type": "function",
+	"z": "2b75917a.78b2fe",
+	"name": "set status",
+	"func": "node.status({\n    fill: 'green',\n    text: 'found process'\n});\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 1360,
+	"y": 160,
+	"wires": [
+		[]
+	]
+}, {
+	"id": "1d8c9ea0.0d79e1",
+	"type": "subflow",
+	"name": "get-query-status",
+	"info": "Returns the current status of a LiveQuery run. Users will observe the field status within the JSON response.\n\n`msg.payload` should be a sring of a `query_id`.\n\n**RBAC Permissions Required**\n\n|Permission (.notation name)\t|Operation(s)|\n|---|---|\n|livequery.manage\t|READ|\n\n[See Documentation](https://developer.carbonblack.com/reference/carbon-black-cloud/cb-liveops/latest/livequery-api/#get-query-run-status)",
+	"category": "CBC Audit and Remediation",
+	"in": [{
+		"x": 280,
+		"y": 240,
+		"wires": [{
+			"id": "117accfd.52e813"
+		}]
+	}],
+	"out": [{
+		"x": 1540,
+		"y": 200,
+		"wires": [{
+			"id": "176c6759.ac8f59",
+			"port": 0
+		}]
+	}, {
+		"x": 1540,
+		"y": 280,
+		"wires": [{
+			"id": "7b1e1694.f9c488",
+			"port": 0
+		}]
+	}],
+	"env": [],
+	"color": "#1c9c9b",
+	"icon": "node-red/leveldb.png",
+	"status": {
+		"x": 500,
+		"y": 180,
+		"wires": [{
+			"id": "9cc9fb80.8b35d8",
+			"port": 0
+		}]
+	}
+}, {
+	"id": "bb0dd927.ebc0f8",
+	"type": "function",
+	"z": "1d8c9ea0.0d79e1",
+	"name": "build http request",
+	"func": "msg.url = [msg.cb.url, 'livequery/v1/orgs', msg.cb.org_key, 'runs', msg.payload].join('/');\n\nmsg.headers = {\n    // The ThreatHunter endpoints use the legacy API key\n    'X-Auth-Token': [msg.cb.custom_api_key, msg.custom_cb.api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 770,
+	"y": 240,
+	"wires": [
+		["4f16798b.e7c558"]
+	]
+}, {
+	"id": "4f16798b.e7c558",
+	"type": "http request",
+	"z": "1d8c9ea0.0d79e1",
+	"name": "",
+	"method": "GET",
+	"ret": "obj",
+	"paytoqs": false,
+	"url": "",
+	"tls": "",
+	"proxy": "",
+	"authType": "",
+	"x": 990,
+	"y": 240,
+	"wires": [
+		["205eb3a9.6a737c"]
+	]
+}, {
+	"id": "205eb3a9.6a737c",
+	"type": "switch",
+	"z": "1d8c9ea0.0d79e1",
+	"name": "status code",
+	"property": "statusCode",
+	"propertyType": "msg",
+	"rules": [{
+		"t": "eq",
+		"v": "200",
+		"vt": "num"
+	}, {
+		"t": "else"
+	}],
+	"checkall": "true",
+	"repair": false,
+	"outputs": 2,
+	"x": 1190,
+	"y": 240,
+	"wires": [
+		["176c6759.ac8f59"],
+		["7b1e1694.f9c488"]
+	]
+}, {
+	"id": "117accfd.52e813",
+	"type": "function",
+	"z": "1d8c9ea0.0d79e1",
+	"name": "set status",
+	"func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n    return;\n}\n\nnode.status({\n    fill: 'grey',\n    text: 'running query...'\n});\n\nmsg.delay = msg.cb.delay;\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 400,
+	"y": 240,
+	"wires": [
+		["27c43c9c.19e374"]
+	]
+}, {
+	"id": "7b1e1694.f9c488",
+	"type": "function",
+	"z": "1d8c9ea0.0d79e1",
+	"name": "set status",
+	"func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 1400,
+	"y": 280,
+	"wires": [
+		[]
+	]
+}, {
+	"id": "27c43c9c.19e374",
+	"type": "delay",
+	"z": "1d8c9ea0.0d79e1",
+	"name": "delay",
+	"pauseType": "delayv",
+	"timeout": "1",
+	"timeoutUnits": "seconds",
+	"rate": "1",
+	"nbRateUnits": "1",
+	"rateUnits": "second",
+	"randomFirst": "1",
+	"randomLast": "5",
+	"randomUnits": "seconds",
+	"drop": false,
+	"x": 570,
+	"y": 240,
+	"wires": [
+		["bb0dd927.ebc0f8"]
+	]
+}, {
+	"id": "9cc9fb80.8b35d8",
+	"type": "status",
+	"z": "1d8c9ea0.0d79e1",
+	"name": "",
+	"scope": ["117accfd.52e813", "7b1e1694.f9c488", "176c6759.ac8f59"],
+	"x": 360,
+	"y": 180,
+	"wires": [
+		[]
+	]
+}, {
+	"id": "176c6759.ac8f59",
+	"type": "function",
+	"z": "1d8c9ea0.0d79e1",
+	"name": "set status",
+	"func": "node.status({\n    fill: 'green',\n    text: 'found process'\n});\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 1400,
+	"y": 200,
+	"wires": [
+		[]
+	]
+}, {
+	"id": "7756f8f0.73c9a8",
+	"type": "subflow",
+	"name": "start-query",
+	"info": "Initiate a new LiveQuery search.\n\nSample `msg.payload`:\n\n    {\n        \"notify_on_finish\": false,\n        \"name\": \"Autoexecs\",\n        \"device_filter\": {\n            \"os\": [\n                \"LINUX\",\n                \"MAC\",\n                \"WINDOWS\"\n            ]\n        },\n        \"sql\": \"SELECT name, path, source FROM autoexec;\"\n    }\n\n**RBAC Permissions Required**\n\n|Permission (.notation name)\t|Operation(s)|\n|---|---|\n|livequery.manage\t|CREATE|\n\n----\n\n[See Documentation](https://developer.carbonblack.com/reference/carbon-black-cloud/cb-liveops/latest/livequery-api/#start-query-run)",
+	"category": "CBC Audit and Remediation",
+	"in": [{
+		"x": 220,
+		"y": 220,
+		"wires": [{
+			"id": "b1adf95c.d23bf8"
+		}]
+	}],
+	"out": [{
+		"x": 1540,
+		"y": 180,
+		"wires": [{
+			"id": "2cf26ef3.ccd122",
+			"port": 0
+		}]
+	}, {
+		"x": 1540,
+		"y": 260,
+		"wires": [{
+			"id": "1d19412d.76543f",
+			"port": 0
+		}]
+	}],
+	"env": [],
+	"color": "#1c9c9b",
+	"icon": "node-red/leveldb.png",
+	"status": {
+		"x": 440,
+		"y": 160,
+		"wires": [{
+			"id": "44556a91.eb6fd4",
+			"port": 0
+		}]
+	}
+}, {
+	"id": "876ed41a.0eab48",
+	"type": "function",
+	"z": "7756f8f0.73c9a8",
+	"name": "build http request",
+	"func": "msg.url = [msg.cb.url, 'livequery/v1/orgs', msg.cb.org_key, 'runs'].join('/');\n\nmsg.headers = {\n    // The ThreatHunter endpoints use the legacy API key\n    'X-Auth-Token': [msg.cb.custom_api_key, msg.custom_cb.api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 730,
+	"y": 220,
+	"wires": [
+		["2511496b.0252c6"]
+	]
+}, {
+	"id": "2511496b.0252c6",
+	"type": "http request",
+	"z": "7756f8f0.73c9a8",
+	"name": "get process summary",
+	"method": "POST",
+	"ret": "obj",
+	"paytoqs": false,
+	"url": "",
+	"tls": "",
+	"proxy": "",
+	"authType": "",
+	"x": 980,
+	"y": 220,
+	"wires": [
+		["3afd4b31.ca1194"]
+	]
+}, {
+	"id": "3afd4b31.ca1194",
+	"type": "switch",
+	"z": "7756f8f0.73c9a8",
+	"name": "status code",
+	"property": "statusCode",
+	"propertyType": "msg",
+	"rules": [{
+		"t": "eq",
+		"v": "200",
+		"vt": "num"
+	}, {
+		"t": "else"
+	}],
+	"checkall": "true",
+	"repair": false,
+	"outputs": 2,
+	"x": 1190,
+	"y": 220,
+	"wires": [
+		["2cf26ef3.ccd122"],
+		["1d19412d.76543f"]
+	]
+}, {
+	"id": "b1adf95c.d23bf8",
+	"type": "function",
+	"z": "7756f8f0.73c9a8",
+	"name": "set status",
+	"func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n    return;\n}\n\nnode.status({\n    fill: 'grey',\n    text: 'running query...'\n});\n\nmsg.delay = msg.cb.delay;\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 360,
+	"y": 220,
+	"wires": [
+		["11dbcf7b.cc66d1"]
+	]
+}, {
+	"id": "1d19412d.76543f",
+	"type": "function",
+	"z": "7756f8f0.73c9a8",
+	"name": "set status",
+	"func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 1400,
+	"y": 260,
+	"wires": [
+		[]
+	]
+}, {
+	"id": "11dbcf7b.cc66d1",
+	"type": "delay",
+	"z": "7756f8f0.73c9a8",
+	"name": "delay",
+	"pauseType": "delayv",
+	"timeout": "1",
+	"timeoutUnits": "seconds",
+	"rate": "1",
+	"nbRateUnits": "1",
+	"rateUnits": "second",
+	"randomFirst": "1",
+	"randomLast": "5",
+	"randomUnits": "seconds",
+	"drop": false,
+	"x": 530,
+	"y": 220,
+	"wires": [
+		["876ed41a.0eab48"]
+	]
+}, {
+	"id": "44556a91.eb6fd4",
+	"type": "status",
+	"z": "7756f8f0.73c9a8",
+	"name": "",
+	"scope": ["b1adf95c.d23bf8", "1d19412d.76543f", "2cf26ef3.ccd122"],
+	"x": 320,
+	"y": 160,
+	"wires": [
+		[]
+	]
+}, {
+	"id": "2cf26ef3.ccd122",
+	"type": "function",
+	"z": "7756f8f0.73c9a8",
+	"name": "set status",
+	"func": "node.status({\n    fill: 'green',\n    text: 'found process'\n});\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 1400,
+	"y": 180,
+	"wires": [
+		[]
+	]
+}, {
+	"id": "14e72af3.351475",
+	"type": "tab",
+	"label": "VMware Carbon Black Cloud Audit and Remediation",
+	"disabled": false,
+	"info": ""
+}, {
+	"id": "e638a0d3.80a05",
+	"type": "subflow:7756f8f0.73c9a8",
+	"z": "14e72af3.351475",
+	"name": "",
+	"x": 230,
+	"y": 140,
+	"wires": [
+		[],
+		[]
+	]
+}, {
+	"id": "9d35cae7.8f5868",
+	"type": "subflow:1d8c9ea0.0d79e1",
+	"z": "14e72af3.351475",
+	"name": "",
+	"x": 250,
+	"y": 180,
+	"wires": [
+		[],
+		[]
+	]
+}, {
+	"id": "1b88e0c1.efe5bf",
+	"type": "subflow:2b75917a.78b2fe",
+	"z": "14e72af3.351475",
+	"name": "",
+	"x": 250,
+	"y": 260,
+	"wires": [
+		[],
+		[]
+	]
+}, {
+	"id": "deeddab0.c279b8",
+	"type": "subflow:538f4839.6b5e78",
+	"z": "14e72af3.351475",
+	"name": "",
+	"x": 250,
+	"y": 220,
+	"wires": [
+		[],
+		[]
+	]
+}, {
+	"id": "ceaa9a17.d0db28",
+	"type": "subflow:ee74f109.d3567",
+	"z": "14e72af3.351475",
+	"name": "",
+	"x": 230,
+	"y": 300,
+	"wires": [
+		[],
+		[]
+	]
+}]
