@@ -1,0 +1,699 @@
+[{
+	"id": "cfaa8271.c9247",
+	"type": "subflow",
+	"name": "delete-policy",
+	"info": "Delete a policy from the CB Defense backend. This API may return an error if devices are actively assigned to the policy id requested for deletion.\n\n`msg.payload` should be a string of the `policy_id`.\n\n----\n\n[See the Documentation](https://developer.carbonblack.com/reference/carbon-black-cloud/cb-defense/latest/rest-api/#delete-policy)",
+	"category": "CBC Endpoint Standard",
+	"in": [{
+		"x": 280,
+		"y": 200,
+		"wires": [{
+			"id": "eaa32ec6.20c29"
+		}]
+	}],
+	"out": [{
+		"x": 1560,
+		"y": 160,
+		"wires": [{
+			"id": "d4cec355.b31a3",
+			"port": 0
+		}]
+	}, {
+		"x": 1560,
+		"y": 240,
+		"wires": [{
+			"id": "72844a9b.5339d4",
+			"port": 0
+		}]
+	}],
+	"env": [],
+	"color": "#abdc17",
+	"icon": "node-red/status.svg",
+	"status": {
+		"x": 520,
+		"y": 140,
+		"wires": [{
+			"id": "e3efd019.2e7a6",
+			"port": 0
+		}]
+	}
+}, {
+	"id": "c91639a3.5f30c8",
+	"type": "function",
+	"z": "cfaa8271.c9247",
+	"name": "build http request",
+	"func": "msg.url = [msg.cb.url, 'integrationServices/v3/policy', msg.payload, 'rule'].join('/');\n\nmsg.headers = {\n    // The ThreatHunter endpoints use the legacy API key\n    'X-Auth-Token': [msg.cb.api_key, msg.cb.api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 790,
+	"y": 200,
+	"wires": [
+		["5ce37c41.8b64b4"]
+	]
+}, {
+	"id": "5ce37c41.8b64b4",
+	"type": "http request",
+	"z": "cfaa8271.c9247",
+	"name": "",
+	"method": "DELETE",
+	"ret": "obj",
+	"paytoqs": false,
+	"url": "",
+	"tls": "",
+	"proxy": "",
+	"authType": "",
+	"x": 1010,
+	"y": 200,
+	"wires": [
+		["d545a481.8c1168"]
+	]
+}, {
+	"id": "d545a481.8c1168",
+	"type": "switch",
+	"z": "cfaa8271.c9247",
+	"name": "status code",
+	"property": "statusCode",
+	"propertyType": "msg",
+	"rules": [{
+		"t": "eq",
+		"v": "200",
+		"vt": "num"
+	}, {
+		"t": "else"
+	}],
+	"checkall": "true",
+	"repair": false,
+	"outputs": 2,
+	"x": 1210,
+	"y": 200,
+	"wires": [
+		["d4cec355.b31a3"],
+		["72844a9b.5339d4"]
+	]
+}, {
+	"id": "eaa32ec6.20c29",
+	"type": "function",
+	"z": "cfaa8271.c9247",
+	"name": "set status",
+	"func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n    return;\n}\n\nnode.status({\n    fill: 'grey',\n    text: 'deleting policy ' + msg.payload + ' ...'\n});\n\nmsg.delay = msg.cb.delay;\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 420,
+	"y": 200,
+	"wires": [
+		["9de2d80b.edfdd8"]
+	]
+}, {
+	"id": "72844a9b.5339d4",
+	"type": "function",
+	"z": "cfaa8271.c9247",
+	"name": "set status",
+	"func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 1420,
+	"y": 240,
+	"wires": [
+		[]
+	]
+}, {
+	"id": "9de2d80b.edfdd8",
+	"type": "delay",
+	"z": "cfaa8271.c9247",
+	"name": "delay",
+	"pauseType": "delayv",
+	"timeout": "1",
+	"timeoutUnits": "seconds",
+	"rate": "1",
+	"nbRateUnits": "1",
+	"rateUnits": "second",
+	"randomFirst": "1",
+	"randomLast": "5",
+	"randomUnits": "seconds",
+	"drop": false,
+	"x": 590,
+	"y": 200,
+	"wires": [
+		["c91639a3.5f30c8"]
+	]
+}, {
+	"id": "e3efd019.2e7a6",
+	"type": "status",
+	"z": "cfaa8271.c9247",
+	"name": "",
+	"scope": ["eaa32ec6.20c29", "72844a9b.5339d4", "d4cec355.b31a3"],
+	"x": 380,
+	"y": 140,
+	"wires": [
+		[]
+	]
+}, {
+	"id": "d4cec355.b31a3",
+	"type": "function",
+	"z": "cfaa8271.c9247",
+	"name": "set status",
+	"func": "node.status({\n    fill: 'green',\n    text: 'updated policy'\n});\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 1420,
+	"y": 160,
+	"wires": [
+		[]
+	]
+}, {
+	"id": "f0a077ad.4174d8",
+	"type": "subflow",
+	"name": "update-policy",
+	"info": "Update an existing policy with a new policy.\n\nThe new policy must be contained in a JSON object named `policyInfo`. The contents of the `policyInfo` object must be must include the following keys:\n - `description`: A description of the policy (can be multiple lines)\n - `name`: A one-line name for the policy (shown in the UI)\n - `version`: Must be set to “2” for the current policy API\n - `priorityLevel`: `HIGH`, `MEDIUM` or `LOW` - the priority score associated with sensors assigned to this policy.\n - `policy`: the JSON object containing the policy details. See examples in the `policy` key from the policies in the GET request above.\n - `id`: The ID of the policy to replace. This ID must match the ID in the request URL.\n\nSee the documentation below for a sample `msg.payload`.\n\n----\n\n[See the Documentation](https://developer.carbonblack.com/reference/carbon-black-cloud/cb-defense/latest/rest-api/#update-existing-policy)",
+	"category": "CBC Endpoint Standard",
+	"in": [{
+		"x": 300,
+		"y": 260,
+		"wires": [{
+			"id": "1c551042.d32c9"
+		}]
+	}],
+	"out": [{
+		"x": 1580,
+		"y": 220,
+		"wires": [{
+			"id": "e80b0126.36971",
+			"port": 0
+		}]
+	}, {
+		"x": 1580,
+		"y": 300,
+		"wires": [{
+			"id": "694ce9aa.352038",
+			"port": 0
+		}]
+	}],
+	"env": [],
+	"color": "#abdc17",
+	"icon": "node-red/status.svg",
+	"status": {
+		"x": 540,
+		"y": 200,
+		"wires": [{
+			"id": "d13a5a24.c090e8",
+			"port": 0
+		}]
+	}
+}, {
+	"id": "e034abae.4b11d8",
+	"type": "function",
+	"z": "f0a077ad.4174d8",
+	"name": "build http request",
+	"func": "msg.url = [msg.cb.url, 'integrationServices/v3/policy', msg.payload.id].join('/');\n\nmsg.headers = {\n    // The ThreatHunter endpoints use the legacy API key\n    'X-Auth-Token': [msg.cb.api_key, msg.cb.api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 810,
+	"y": 260,
+	"wires": [
+		["9d745f53.7ee77"]
+	]
+}, {
+	"id": "9d745f53.7ee77",
+	"type": "http request",
+	"z": "f0a077ad.4174d8",
+	"name": "",
+	"method": "PUT",
+	"ret": "obj",
+	"paytoqs": false,
+	"url": "",
+	"tls": "",
+	"proxy": "",
+	"authType": "",
+	"x": 1030,
+	"y": 260,
+	"wires": [
+		["a1d691b9.8ae0f"]
+	]
+}, {
+	"id": "a1d691b9.8ae0f",
+	"type": "switch",
+	"z": "f0a077ad.4174d8",
+	"name": "status code",
+	"property": "statusCode",
+	"propertyType": "msg",
+	"rules": [{
+		"t": "eq",
+		"v": "200",
+		"vt": "num"
+	}, {
+		"t": "else"
+	}],
+	"checkall": "true",
+	"repair": false,
+	"outputs": 2,
+	"x": 1230,
+	"y": 260,
+	"wires": [
+		["e80b0126.36971"],
+		["694ce9aa.352038"]
+	]
+}, {
+	"id": "1c551042.d32c9",
+	"type": "function",
+	"z": "f0a077ad.4174d8",
+	"name": "set status",
+	"func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n    return;\n}\n\nnode.status({\n    fill: 'grey',\n    text: 'updating policy ' + msg.payload + ' ...'\n});\n\nmsg.delay = msg.cb.delay;\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 440,
+	"y": 260,
+	"wires": [
+		["aa3e37be.a5ab48"]
+	]
+}, {
+	"id": "694ce9aa.352038",
+	"type": "function",
+	"z": "f0a077ad.4174d8",
+	"name": "set status",
+	"func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 1440,
+	"y": 300,
+	"wires": [
+		[]
+	]
+}, {
+	"id": "aa3e37be.a5ab48",
+	"type": "delay",
+	"z": "f0a077ad.4174d8",
+	"name": "delay",
+	"pauseType": "delayv",
+	"timeout": "1",
+	"timeoutUnits": "seconds",
+	"rate": "1",
+	"nbRateUnits": "1",
+	"rateUnits": "second",
+	"randomFirst": "1",
+	"randomLast": "5",
+	"randomUnits": "seconds",
+	"drop": false,
+	"x": 610,
+	"y": 260,
+	"wires": [
+		["e034abae.4b11d8"]
+	]
+}, {
+	"id": "d13a5a24.c090e8",
+	"type": "status",
+	"z": "f0a077ad.4174d8",
+	"name": "",
+	"scope": ["1c551042.d32c9", "694ce9aa.352038", "e80b0126.36971"],
+	"x": 400,
+	"y": 200,
+	"wires": [
+		[]
+	]
+}, {
+	"id": "e80b0126.36971",
+	"type": "function",
+	"z": "f0a077ad.4174d8",
+	"name": "set status",
+	"func": "node.status({\n    fill: 'green',\n    text: 'updated policy'\n});\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 1440,
+	"y": 220,
+	"wires": [
+		[]
+	]
+}, {
+	"id": "277da016.09392",
+	"type": "subflow",
+	"name": "get-policy-details",
+	"info": "Retrieve a policy object by ID. The policy object includes the policy metadata, policy details, and associated rules for the policy.\n\n`msg.payload` should be a string of the `policy_id`.\n\n----\n\n[See the Documentation](https://developer.carbonblack.com/reference/carbon-black-cloud/cb-defense/latest/rest-api/#retrieve-policy-by-id)",
+	"category": "CBC Endpoint Standard",
+	"in": [{
+		"x": 380,
+		"y": 280,
+		"wires": [{
+			"id": "e02d363a.7ae348"
+		}]
+	}],
+	"out": [{
+		"x": 1640,
+		"y": 240,
+		"wires": [{
+			"id": "fb9d309f.78735",
+			"port": 0
+		}]
+	}, {
+		"x": 1640,
+		"y": 320,
+		"wires": [{
+			"id": "a135dd8d.668c1",
+			"port": 0
+		}]
+	}],
+	"env": [],
+	"color": "#abdc17",
+	"icon": "node-red/status.svg",
+	"status": {
+		"x": 620,
+		"y": 220,
+		"wires": [{
+			"id": "9406be2a.91f9",
+			"port": 0
+		}]
+	}
+}, {
+	"id": "ab93bb25.9a6548",
+	"type": "function",
+	"z": "277da016.09392",
+	"name": "build http request",
+	"func": "msg.url = [msg.cb.url, 'integrationServices/v3/policy', msg.payload].join('/');\n\nmsg.headers = {\n    // The ThreatHunter endpoints use the legacy API key\n    'X-Auth-Token': [msg.cb.api_key, msg.cb.api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 890,
+	"y": 280,
+	"wires": [
+		["7a9bf872.8c2b28"]
+	]
+}, {
+	"id": "7a9bf872.8c2b28",
+	"type": "http request",
+	"z": "277da016.09392",
+	"name": "",
+	"method": "GET",
+	"ret": "obj",
+	"paytoqs": false,
+	"url": "",
+	"tls": "",
+	"proxy": "",
+	"authType": "",
+	"x": 1110,
+	"y": 280,
+	"wires": [
+		["879b38ad.9e8b88"]
+	]
+}, {
+	"id": "879b38ad.9e8b88",
+	"type": "switch",
+	"z": "277da016.09392",
+	"name": "status code",
+	"property": "statusCode",
+	"propertyType": "msg",
+	"rules": [{
+		"t": "eq",
+		"v": "200",
+		"vt": "num"
+	}, {
+		"t": "else"
+	}],
+	"checkall": "true",
+	"repair": false,
+	"outputs": 2,
+	"x": 1310,
+	"y": 280,
+	"wires": [
+		["fb9d309f.78735"],
+		["a135dd8d.668c1"]
+	]
+}, {
+	"id": "e02d363a.7ae348",
+	"type": "function",
+	"z": "277da016.09392",
+	"name": "set status",
+	"func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n    return;\n}\n\nnode.status({\n    fill: 'grey',\n    text: 'getting policy ' + msg.payload + ' ...'\n});\n\nmsg.delay = msg.cb.delay;\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 520,
+	"y": 280,
+	"wires": [
+		["2021dcc3.520dc4"]
+	]
+}, {
+	"id": "a135dd8d.668c1",
+	"type": "function",
+	"z": "277da016.09392",
+	"name": "set status",
+	"func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 1520,
+	"y": 320,
+	"wires": [
+		[]
+	]
+}, {
+	"id": "2021dcc3.520dc4",
+	"type": "delay",
+	"z": "277da016.09392",
+	"name": "delay",
+	"pauseType": "delayv",
+	"timeout": "1",
+	"timeoutUnits": "seconds",
+	"rate": "1",
+	"nbRateUnits": "1",
+	"rateUnits": "second",
+	"randomFirst": "1",
+	"randomLast": "5",
+	"randomUnits": "seconds",
+	"drop": false,
+	"x": 690,
+	"y": 280,
+	"wires": [
+		["ab93bb25.9a6548"]
+	]
+}, {
+	"id": "9406be2a.91f9",
+	"type": "status",
+	"z": "277da016.09392",
+	"name": "",
+	"scope": ["e02d363a.7ae348", "a135dd8d.668c1", "fb9d309f.78735"],
+	"x": 480,
+	"y": 220,
+	"wires": [
+		[]
+	]
+}, {
+	"id": "fb9d309f.78735",
+	"type": "function",
+	"z": "277da016.09392",
+	"name": "set status",
+	"func": "node.status({\n    fill: 'green',\n    text: 'found process'\n});\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 1520,
+	"y": 240,
+	"wires": [
+		[]
+	]
+}, {
+	"id": "1da2bcfe.964b93",
+	"type": "subflow",
+	"name": "get-policies",
+	"info": "Get the list of policies available in your organization. This list of policies include system policies (cannot be deleted or modified) as well as user-created policies (which can be deleted and modified). Each policy is a JSON document containing metadata about the policy and a list of rules. There is a separate rule API that can create, modify, and delete rules inside of a policy in addition to replacing the entire policy through the Policy API.\n\nNo `msg.payload` is required.\n\n----\n\n[See the Documentation](https://developer.carbonblack.com/reference/carbon-black-cloud/cb-defense/latest/rest-api/#get-list-of-policies)",
+	"category": "CBC Endpoint Standard",
+	"in": [{
+		"x": 300,
+		"y": 180,
+		"wires": [{
+			"id": "e737c62c.d535f8"
+		}]
+	}],
+	"out": [{
+		"x": 1580,
+		"y": 140,
+		"wires": [{
+			"id": "c1a5d549.9d8638",
+			"port": 0
+		}]
+	}, {
+		"x": 1580,
+		"y": 220,
+		"wires": [{
+			"id": "feaca389.ba894",
+			"port": 0
+		}]
+	}],
+	"env": [],
+	"color": "#abdc17",
+	"icon": "node-red/status.svg",
+	"status": {
+		"x": 520,
+		"y": 120,
+		"wires": [{
+			"id": "5f5b538.47453ac",
+			"port": 0
+		}]
+	}
+}, {
+	"id": "db7ab969.e68598",
+	"type": "function",
+	"z": "1da2bcfe.964b93",
+	"name": "build http request",
+	"func": "msg.url = [msg.cb.url, 'integrationServices/v3/policy'].join('/');\n\nmsg.headers = {\n    // The ThreatHunter endpoints use the legacy API key\n    'X-Auth-Token': [msg.cb.api_key, msg.cb.api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 810,
+	"y": 180,
+	"wires": [
+		["2c2e6a1a.67b8e6"]
+	]
+}, {
+	"id": "2c2e6a1a.67b8e6",
+	"type": "http request",
+	"z": "1da2bcfe.964b93",
+	"name": "",
+	"method": "GET",
+	"ret": "obj",
+	"paytoqs": false,
+	"url": "",
+	"tls": "",
+	"proxy": "",
+	"authType": "",
+	"x": 1030,
+	"y": 180,
+	"wires": [
+		["dd47e254.494d2"]
+	]
+}, {
+	"id": "dd47e254.494d2",
+	"type": "switch",
+	"z": "1da2bcfe.964b93",
+	"name": "status code",
+	"property": "statusCode",
+	"propertyType": "msg",
+	"rules": [{
+		"t": "eq",
+		"v": "200",
+		"vt": "num"
+	}, {
+		"t": "else"
+	}],
+	"checkall": "true",
+	"repair": false,
+	"outputs": 2,
+	"x": 1230,
+	"y": 180,
+	"wires": [
+		["c1a5d549.9d8638"],
+		["feaca389.ba894"]
+	]
+}, {
+	"id": "e737c62c.d535f8",
+	"type": "function",
+	"z": "1da2bcfe.964b93",
+	"name": "set status",
+	"func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n    return;\n}\n\nnode.status({\n    fill: 'grey',\n    text: 'getting policies...'\n});\n\nmsg.delay = msg.cb.delay;\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 440,
+	"y": 180,
+	"wires": [
+		["60ffc4f3.685b7c"]
+	]
+}, {
+	"id": "feaca389.ba894",
+	"type": "function",
+	"z": "1da2bcfe.964b93",
+	"name": "set status",
+	"func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 1440,
+	"y": 220,
+	"wires": [
+		[]
+	]
+}, {
+	"id": "60ffc4f3.685b7c",
+	"type": "delay",
+	"z": "1da2bcfe.964b93",
+	"name": "delay",
+	"pauseType": "delayv",
+	"timeout": "1",
+	"timeoutUnits": "seconds",
+	"rate": "1",
+	"nbRateUnits": "1",
+	"rateUnits": "second",
+	"randomFirst": "1",
+	"randomLast": "5",
+	"randomUnits": "seconds",
+	"drop": false,
+	"x": 610,
+	"y": 180,
+	"wires": [
+		["db7ab969.e68598"]
+	]
+}, {
+	"id": "5f5b538.47453ac",
+	"type": "status",
+	"z": "1da2bcfe.964b93",
+	"name": "",
+	"scope": ["e737c62c.d535f8", "feaca389.ba894", "c1a5d549.9d8638"],
+	"x": 400,
+	"y": 120,
+	"wires": [
+		[]
+	]
+}, {
+	"id": "c1a5d549.9d8638",
+	"type": "function",
+	"z": "1da2bcfe.964b93",
+	"name": "set status",
+	"func": "node.status({\n    fill: 'green',\n    text: 'found process'\n});\n\nreturn msg;",
+	"outputs": 1,
+	"noerr": 0,
+	"x": 1440,
+	"y": 140,
+	"wires": [
+		[]
+	]
+}, {
+	"id": "75c986d5.c3cf68",
+	"type": "tab",
+	"label": "VMware Carbon Black Cloud Endpoint Standard",
+	"disabled": false,
+	"info": ""
+}, {
+	"id": "32c8850c.9a2cba",
+	"type": "subflow:1da2bcfe.964b93",
+	"z": "75c986d5.c3cf68",
+	"name": "",
+	"x": 330,
+	"y": 220,
+	"wires": [
+		[],
+		[]
+	]
+}, {
+	"id": "6096a614.ebf878",
+	"type": "subflow:277da016.09392",
+	"z": "75c986d5.c3cf68",
+	"name": "",
+	"x": 350,
+	"y": 260,
+	"wires": [
+		[],
+		[]
+	]
+}, {
+	"id": "a85de9f4.5f69c8",
+	"type": "subflow:f0a077ad.4174d8",
+	"z": "75c986d5.c3cf68",
+	"name": "",
+	"x": 340,
+	"y": 300,
+	"wires": [
+		[],
+		[]
+	]
+}, {
+	"id": "5f94992f.5fd068",
+	"type": "subflow:cfaa8271.c9247",
+	"z": "75c986d5.c3cf68",
+	"name": "",
+	"x": 330,
+	"y": 340,
+	"wires": [
+		[],
+		[]
+	]
+}]
