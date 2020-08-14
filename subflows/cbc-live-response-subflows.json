@@ -1,1410 +1,1771 @@
-[{
-	"id": "f47e209d.f96e9",
-	"type": "subflow",
-	"name": "close-session",
-	"info": "This node closes a connection to a LiveResponse session.\n\nIt expects a `msg.cb` object with at least the following keys: `url`, `lr_api_id`, `lr_api_key`, and `session_id`.\n\nReturns an updated `msg` object with http responses.",
-	"category": "CBC LiveResponse",
-	"in": [{
-		"x": 260,
-		"y": 120,
-		"wires": [{
-			"id": "1de6408.1baacc"
-		}]
-	}],
-	"out": [{
-		"x": 1200,
-		"y": 80,
-		"wires": [{
-			"id": "f0c21268.d5019",
-			"port": 0
-		}]
-	}, {
-		"x": 1200,
-		"y": 160,
-		"wires": [{
-			"id": "e6afa22b.df693",
-			"port": 0
-		}]
-	}],
-	"env": [],
-	"color": "#88cde1",
-	"inputLabels": ["msg.cb"],
-	"outputLabels": ["response", "error"],
-	"icon": "font-awesome/fa-terminal",
-	"status": {
-		"x": 440,
-		"y": 60,
-		"wires": [{
-			"id": "f292b3e0.a4958",
-			"port": 0
-		}]
-	}
-}, {
-	"id": "a501114b.657cd",
-	"type": "function",
-	"z": "f47e209d.f96e9",
-	"name": "Close Session",
-	"func": "msg.url = [msg.cb.url, 'integrationServices/v3/cblr/session'].join('/');\n\nmsg.headers = {\n    'X-Auth-Token': [msg.cb.lr_api_key, msg.cb.lr_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nmsg.payload = {\n    session_id: msg.cb.session_id,\n    status: 'CLOSE'\n}\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 560,
-	"y": 120,
-	"wires": [
-		["36bba513.a986fa"]
-	]
-}, {
-	"id": "36bba513.a986fa",
-	"type": "http request",
-	"z": "f47e209d.f96e9",
-	"name": "",
-	"method": "PUT",
-	"ret": "obj",
-	"paytoqs": false,
-	"url": "",
-	"tls": "",
-	"proxy": "",
-	"authType": "",
-	"x": 750,
-	"y": 120,
-	"wires": [
-		["f21b34c3.517758"]
-	]
-}, {
-	"id": "f21b34c3.517758",
-	"type": "switch",
-	"z": "f47e209d.f96e9",
-	"name": "",
-	"property": "statusCode",
-	"propertyType": "msg",
-	"rules": [{
-		"t": "eq",
-		"v": "200",
-		"vt": "num"
-	}, {
-		"t": "else"
-	}],
-	"checkall": "true",
-	"repair": false,
-	"outputs": 2,
-	"x": 910,
-	"y": 120,
-	"wires": [
-		["f0c21268.d5019"],
-		["e6afa22b.df693"]
-	]
-}, {
-	"id": "f0c21268.d5019",
-	"type": "function",
-	"z": "f47e209d.f96e9",
-	"name": "set status",
-	"func": "node.status({\n    fill: 'green',\n    text: 'session closed'\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1080,
-	"y": 80,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "f292b3e0.a4958",
-	"type": "status",
-	"z": "f47e209d.f96e9",
-	"name": "",
-	"scope": ["f0c21268.d5019", "1de6408.1baacc", "e6afa22b.df693"],
-	"x": 300,
-	"y": 60,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "1de6408.1baacc",
-	"type": "function",
-	"z": "f47e209d.f96e9",
-	"name": "set status",
-	"func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n}\n\nelse {\n    node.status({\n        fill: 'grey',\n        text: 'getting data...'\n    });\n}\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 380,
-	"y": 120,
-	"wires": [
-		["a501114b.657cd"]
-	]
-}, {
-	"id": "e6afa22b.df693",
-	"type": "function",
-	"z": "f47e209d.f96e9",
-	"name": "set status",
-	"func": "node.status({\n    fill: 'red',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1080,
-	"y": 160,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "49195052.02eab",
-	"type": "subflow",
-	"name": "get-file-content",
-	"info": "Get the contents of a file.\n\n`msg.payload` should be a string of a `file_id`.\n\n[See the Documentation](https://developer.carbonblack.com/reference/carbon-black-cloud/cb-defense/latest/live-response-api/#get-file-content)",
-	"category": "CBC LiveResponse",
-	"in": [{
-		"x": 140,
-		"y": 180,
-		"wires": [{
-			"id": "e79538b3.b85418"
-		}]
-	}],
-	"out": [{
-		"x": 1360,
-		"y": 140,
-		"wires": [{
-			"id": "e7e55aa.4a378a8",
-			"port": 0
-		}]
-	}, {
-		"x": 1360,
-		"y": 220,
-		"wires": [{
-			"id": "6aa34e7a.ba93e",
-			"port": 0
-		}]
-	}],
-	"env": [],
-	"color": "#88cde1",
-	"status": {
-		"x": 340,
-		"y": 80,
-		"wires": [{
-			"id": "e5dcd78e.eddbd8",
-			"port": 0
-		}]
-	}
-}, {
-	"id": "b4bd78a6.5f5a48",
-	"type": "function",
-	"z": "49195052.02eab",
-	"name": "Get File Content",
-	"func": "msg.url = [msg.cb.url, 'integrationServices/v3/cblr/session', msg.cb.session_id, 'file', msg.payload, 'content'].join('/');\n\nmsg.headers = {\n    'X-Auth-Token': [msg.cb.lr_api_key, msg.cb.lr_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 620,
-	"y": 180,
-	"wires": [
-		["37cb3f27.35ab7"]
-	]
-}, {
-	"id": "37cb3f27.35ab7",
-	"type": "http request",
-	"z": "49195052.02eab",
-	"name": "",
-	"method": "GET",
-	"ret": "bin",
-	"paytoqs": false,
-	"url": "",
-	"tls": "",
-	"persist": false,
-	"proxy": "",
-	"authType": "",
-	"x": 830,
-	"y": 180,
-	"wires": [
-		["3f0eb581.e808ba"]
-	]
-}, {
-	"id": "3f0eb581.e808ba",
-	"type": "switch",
-	"z": "49195052.02eab",
-	"name": "statusCode",
-	"property": "statusCode",
-	"propertyType": "msg",
-	"rules": [{
-		"t": "eq",
-		"v": "200",
-		"vt": "num"
-	}, {
-		"t": "else"
-	}],
-	"checkall": "true",
-	"repair": false,
-	"outputs": 2,
-	"x": 1030,
-	"y": 180,
-	"wires": [
-		["e7e55aa.4a378a8"],
-		["6aa34e7a.ba93e"]
-	]
-}, {
-	"id": "e5dcd78e.eddbd8",
-	"type": "status",
-	"z": "49195052.02eab",
-	"name": "",
-	"scope": ["e7e55aa.4a378a8", "e79538b3.b85418", "6aa34e7a.ba93e"],
-	"x": 200,
-	"y": 80,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "e7e55aa.4a378a8",
-	"type": "function",
-	"z": "49195052.02eab",
-	"name": "return success",
-	"func": "node.status({\n    fill: 'green',\n    text: 'downloaded file'\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1240,
-	"y": 140,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "e79538b3.b85418",
-	"type": "function",
-	"z": "49195052.02eab",
-	"name": "set status",
-	"func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        shape: 'ring',\n        text: 'cb not instantiated'\n    });\n}\n\nelse {\n    node.status({\n        fill: 'grey',\n        shape: 'ring',\n        text: 'getting file...'\n    });\n}\n\nmsg.delay = msg.cb.delay || 1;\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 280,
-	"y": 180,
-	"wires": [
-		["b7e58616.80ff98"]
-	]
-}, {
-	"id": "6aa34e7a.ba93e",
-	"type": "function",
-	"z": "49195052.02eab",
-	"name": "return error",
-	"func": "node.status({\n    fill: 'red',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1230,
-	"y": 220,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "b7e58616.80ff98",
-	"type": "delay",
-	"z": "49195052.02eab",
-	"name": "",
-	"pauseType": "delayv",
-	"timeout": "1",
-	"timeoutUnits": "seconds",
-	"rate": "1",
-	"nbRateUnits": "1",
-	"rateUnits": "second",
-	"randomFirst": "1",
-	"randomLast": "5",
-	"randomUnits": "seconds",
-	"drop": false,
-	"x": 440,
-	"y": 180,
-	"wires": [
-		["b4bd78a6.5f5a48"]
-	]
-}, {
-	"id": "48d77de7.0711a4",
-	"type": "subflow",
-	"name": "upload-file",
-	"info": "This will upload a file to an endpoint and return `msg.payload.file_id`. This `file_id` can be used in a subsequent `put-file` request to put the file on an endpoint using Live Response.\n\n`msg.payload` should be the contents of the file you want to post. `msg.filename` is required as well.",
-	"category": "CBC LiveResponse",
-	"in": [{
-		"x": 120,
-		"y": 140,
-		"wires": [{
-			"id": "f4ec2b9b.84f1d8"
-		}]
-	}],
-	"out": [{
-		"x": 1440,
-		"y": 100,
-		"wires": [{
-			"id": "de00f5c3.8ba9d8",
-			"port": 0
-		}]
-	}, {
-		"x": 1440,
-		"y": 180,
-		"wires": [{
-			"id": "920bba95.c6c118",
-			"port": 0
-		}]
-	}],
-	"env": [],
-	"color": "#88cde1",
-	"icon": "font-awesome/fa-terminal",
-	"status": {
-		"x": 320,
-		"y": 80,
-		"wires": [{
-			"id": "462f355c.39b10c",
-			"port": 0
-		}]
-	}
-}, {
-	"id": "2c4b9b0f.d699c4",
-	"type": "switch",
-	"z": "48d77de7.0711a4",
-	"name": "status code",
-	"property": "statusCode",
-	"propertyType": "msg",
-	"rules": [{
-		"t": "eq",
-		"v": "200",
-		"vt": "num"
-	}, {
-		"t": "else"
-	}],
-	"checkall": "true",
-	"repair": false,
-	"outputs": 2,
-	"x": 1090,
-	"y": 140,
-	"wires": [
-		["de00f5c3.8ba9d8"],
-		["920bba95.c6c118"]
-	]
-}, {
-	"id": "f4ec2b9b.84f1d8",
-	"type": "function",
-	"z": "48d77de7.0711a4",
-	"name": "set status",
-	"func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n    return;\n}\n\nnode.status({\n    fill: 'grey',\n    text: 'getting policies...'\n});\n\nmsg.delay = msg.cb.delay;\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 240,
-	"y": 140,
-	"wires": [
-		["799b0a3f.7fb5b4"]
-	]
-}, {
-	"id": "920bba95.c6c118",
-	"type": "function",
-	"z": "48d77de7.0711a4",
-	"name": "set status",
-	"func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1300,
-	"y": 180,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "799b0a3f.7fb5b4",
-	"type": "delay",
-	"z": "48d77de7.0711a4",
-	"name": "delay",
-	"pauseType": "delayv",
-	"timeout": "1",
-	"timeoutUnits": "seconds",
-	"rate": "1",
-	"nbRateUnits": "1",
-	"rateUnits": "second",
-	"randomFirst": "1",
-	"randomLast": "5",
-	"randomUnits": "seconds",
-	"drop": false,
-	"x": 410,
-	"y": 140,
-	"wires": [
-		["11a823f1.85cefc"]
-	]
-}, {
-	"id": "462f355c.39b10c",
-	"type": "status",
-	"z": "48d77de7.0711a4",
-	"name": "",
-	"scope": ["f4ec2b9b.84f1d8", "920bba95.c6c118", "de00f5c3.8ba9d8"],
-	"x": 200,
-	"y": 80,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "de00f5c3.8ba9d8",
-	"type": "function",
-	"z": "48d77de7.0711a4",
-	"name": "set status",
-	"func": "node.status({\n    fill: 'green',\n    text: 'found process'\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1300,
-	"y": 100,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "37e31960.6148a6",
-	"type": "http request",
-	"z": "48d77de7.0711a4",
-	"name": "",
-	"method": "POST",
-	"ret": "obj",
-	"paytoqs": false,
-	"url": "",
-	"tls": "",
-	"persist": false,
-	"proxy": "",
-	"authType": "",
-	"x": 890,
-	"y": 140,
-	"wires": [
-		["2c4b9b0f.d699c4"]
-	]
-}, {
-	"id": "11a823f1.85cefc",
-	"type": "function",
-	"z": "48d77de7.0711a4",
-	"name": "Format the header and payload",
-	"func": "msg.url = [msg.cb.url, 'integrationServices/v3/cblr/session', msg.cb.session_id, 'file'].join('/');\n\nmsg.headers = {\n    \"X-Auth-Token\": [msg.cb.lr_api_key, msg.cb.lr_api_id].join('/'),\n    \"Content-Type\": \"multipart/form-data; boundary=------------------------d74496d66958873e\"\n};\n\n\nmsg.payload = '--------------------------d74496d66958873e\\r\\n' +\n'Content-Disposition: form-data; name=\"select\"\\r\\n' +\n'\\r\\n' +\n'true\\r\\n' +\n'--------------------------d74496d66958873e\\r\\n' +\n'Content-Disposition: form-data; name=\"print\"\\r\\n' +\n'\\r\\n' +\n'true\\r\\n' +\n'--------------------------d74496d66958873e\\r\\n' +\n'Content-Disposition: form-data; name=\"file\"; filename=\"' + msg.filename + '\"\\r\\n' +\n'Content-Type: application/octet-stream\\r\\n' +\n'\\r\\n' +\nmsg.payload + '\\r\\n' +\n'--------------------------d74496d66958873e--\\r\\n';\n\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 630,
-	"y": 140,
-	"wires": [
-		["37e31960.6148a6"]
-	]
-}, {
-	"id": "e38b208d.4d8fa",
-	"type": "subflow",
-	"name": "get-file-metadata",
-	"info": "",
-	"category": "CBC LiveResponse",
-	"in": [{
-		"x": 120,
-		"y": 140,
-		"wires": [{
-			"id": "70747deb.c248d4"
-		}]
-	}],
-	"out": [{
-		"x": 1380,
-		"y": 100,
-		"wires": [{
-			"id": "b27a3045.adeed",
-			"port": 0
-		}]
-	}, {
-		"x": 1380,
-		"y": 180,
-		"wires": [{
-			"id": "ad03d9cb.c617b8",
-			"port": 0
-		}]
-	}],
-	"env": [],
-	"color": "#88cde1",
-	"icon": "font-awesome/fa-terminal",
-	"status": {
-		"x": 320,
-		"y": 80,
-		"wires": [{
-			"id": "27acc27c.6b842e",
-			"port": 0
-		}]
-	}
-}, {
-	"id": "530a0bac.14fdc4",
-	"type": "function",
-	"z": "e38b208d.4d8fa",
-	"name": "build http request",
-	"func": "msg.url = [msg.cb.url, 'integrationServices/v3/cblr/session', msg.cb.session_id, 'file'].join('/');\n\nmsg.headers = {\n    // The ThreatHunter endpoints use the legacy API key\n    'X-Auth-Token': [msg.cb.lr_api_key, msg.cb.lr_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 610,
-	"y": 140,
-	"wires": [
-		["bd236c16.8f828"]
-	]
-}, {
-	"id": "bd236c16.8f828",
-	"type": "http request",
-	"z": "e38b208d.4d8fa",
-	"name": "",
-	"method": "GET",
-	"ret": "obj",
-	"paytoqs": false,
-	"url": "",
-	"tls": "",
-	"proxy": "",
-	"authType": "",
-	"x": 830,
-	"y": 140,
-	"wires": [
-		["38ce0dae.956c42"]
-	]
-}, {
-	"id": "38ce0dae.956c42",
-	"type": "switch",
-	"z": "e38b208d.4d8fa",
-	"name": "status code",
-	"property": "statusCode",
-	"propertyType": "msg",
-	"rules": [{
-		"t": "eq",
-		"v": "200",
-		"vt": "num"
-	}, {
-		"t": "else"
-	}],
-	"checkall": "true",
-	"repair": false,
-	"outputs": 2,
-	"x": 1030,
-	"y": 140,
-	"wires": [
-		["b27a3045.adeed"],
-		["ad03d9cb.c617b8"]
-	]
-}, {
-	"id": "70747deb.c248d4",
-	"type": "function",
-	"z": "e38b208d.4d8fa",
-	"name": "set status",
-	"func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n    return;\n}\n\nnode.status({\n    fill: 'grey',\n    text: 'finding events...'\n});\n\nmsg.delay = msg.cb.delay;\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 240,
-	"y": 140,
-	"wires": [
-		["b7668ed4.6b223"]
-	]
-}, {
-	"id": "ad03d9cb.c617b8",
-	"type": "function",
-	"z": "e38b208d.4d8fa",
-	"name": "set status",
-	"func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1240,
-	"y": 180,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "b7668ed4.6b223",
-	"type": "delay",
-	"z": "e38b208d.4d8fa",
-	"name": "delay",
-	"pauseType": "delayv",
-	"timeout": "1",
-	"timeoutUnits": "seconds",
-	"rate": "1",
-	"nbRateUnits": "1",
-	"rateUnits": "second",
-	"randomFirst": "1",
-	"randomLast": "5",
-	"randomUnits": "seconds",
-	"drop": false,
-	"x": 410,
-	"y": 140,
-	"wires": [
-		["530a0bac.14fdc4"]
-	]
-}, {
-	"id": "27acc27c.6b842e",
-	"type": "status",
-	"z": "e38b208d.4d8fa",
-	"name": "",
-	"scope": ["70747deb.c248d4", "ad03d9cb.c617b8", "b27a3045.adeed"],
-	"x": 200,
-	"y": 80,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "b27a3045.adeed",
-	"type": "function",
-	"z": "e38b208d.4d8fa",
-	"name": "set status",
-	"func": "node.status({\n    fill: 'green',\n    text: 'found process'\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1240,
-	"y": 100,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "f3a2d7d6.1e92d8",
-	"type": "subflow",
-	"name": "get-command-status",
-	"info": "This node gets the status of a LiveResponse command.\n\nIt expects a `msg.cb` object with at least the following keys: `url`, `lr_api_id`, `lr_api_key`, `session_id`, and `command_id`.\n\nReturns an updated `msg` object with the http response.",
-	"category": "CBC LiveResponse",
-	"in": [{
-		"x": 240,
-		"y": 100,
-		"wires": [{
-			"id": "b5ea2c40.c33f4"
-		}]
-	}],
-	"out": [{
-		"x": 900,
-		"y": 100,
-		"wires": [{
-			"id": "219ec24c.fc1c8e",
-			"port": 0
-		}]
-	}],
-	"env": [],
-	"color": "#88cde1",
-	"icon": "font-awesome/fa-terminal"
-}, {
-	"id": "b5ea2c40.c33f4",
-	"type": "function",
-	"z": "f3a2d7d6.1e92d8",
-	"name": "Get Status of Command",
-	"func": "msg.url = [msg.cb.url, '/integrationServices/v3/cblr/session/', msg.cb.session_id, '/command/', msg.cb.command_id].join('');\n\nmsg.headers = {\n    'X-Auth-Token': [msg.cb.lr_api_key, msg.cb.lr_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 470,
-	"y": 100,
-	"wires": [
-		["219ec24c.fc1c8e"]
-	]
-}, {
-	"id": "219ec24c.fc1c8e",
-	"type": "http request",
-	"z": "f3a2d7d6.1e92d8",
-	"name": "",
-	"method": "GET",
-	"ret": "obj",
-	"paytoqs": false,
-	"url": "",
-	"tls": "",
-	"proxy": "",
-	"authType": "",
-	"x": 710,
-	"y": 100,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "842f24dd.ba7438",
-	"type": "subflow",
-	"name": "send-command",
-	"info": "This node sends a command to a LiveResponse session.  \n\nIt expects a `msg.cb` object with at least the following keys: `url`, `lr_api_id`, `lr_api_key`, `session_id` and `payload`.  \n\nThe `msg.payload` should be the body of the request as defined in the [documentation](https://developer.carbonblack.com/reference/carbon-black-cloud/cb-defense/latest/live-response-api/#command-objects).  \n\nThis is an example of a `msg.payload` to list a directory: \n\n```\n{\n\t\"session_id\": msg.cb.session_id,\n\t\"name\": \"directory list\",\n\t\"object\": \"C:\\\\Users\\\\\"\n}\n```\n  \nReturns an updated `msg` object with the http response.",
-	"category": "CBC LiveResponse",
-	"in": [{
-		"x": 80,
-		"y": 160,
-		"wires": [{
-			"id": "aa8dcc12.33c36"
-		}]
-	}],
-	"out": [{
-		"x": 1420,
-		"y": 60,
-		"wires": [{
-			"id": "f0c0b7e4.0c2f38",
-			"port": 0
-		}]
-	}, {
-		"x": 1860,
-		"y": 60,
-		"wires": [{
-			"id": "c9a65178.d4412",
-			"port": 0
-		}]
-	}, {
-		"x": 1820,
-		"y": 300,
-		"wires": [{
-			"id": "2962edd1.2de832",
-			"port": 0
-		}, {
-			"id": "4a4a7f93.fff4d",
-			"port": 0
-		}]
-	}],
-	"env": [],
-	"color": "#88cde1",
-	"outputLabels": ["response", "after command confirmed", "error"],
-	"icon": "font-awesome/fa-terminal",
-	"status": {
-		"x": 280,
-		"y": 60,
-		"wires": [{
-			"id": "cf93130a.80821",
-			"port": 0
-		}]
-	}
-}, {
-	"id": "ef26faf6.b59698",
-	"type": "function",
-	"z": "842f24dd.ba7438",
-	"name": "Send Command to Endpoint",
-	"func": "msg.url = [msg.cb.url, 'integrationServices/v3/cblr/session', msg.cb.session_id, 'command'].join('/');\n\nmsg.headers = {\n    \"X-Auth-Token\": [msg.cb.lr_api_key, msg.cb.lr_api_id].join('/'),\n    \"Content-Type\": \"application/json\"\n};\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 580,
-	"y": 160,
-	"wires": [
-		["96d574b1.438158"]
-	]
-}, {
-	"id": "96d574b1.438158",
-	"type": "http request",
-	"z": "842f24dd.ba7438",
-	"name": "",
-	"method": "POST",
-	"ret": "obj",
-	"paytoqs": false,
-	"url": "",
-	"tls": "",
-	"proxy": "",
-	"authType": "",
-	"x": 810,
-	"y": 160,
-	"wires": [
-		["ba7b8b09.f9d928"]
-	]
-}, {
-	"id": "ef104f2d.d8eb1",
-	"type": "switch",
-	"z": "842f24dd.ba7438",
-	"name": "Switch on Status",
-	"property": "payload.status",
-	"propertyType": "msg",
-	"rules": [{
-		"t": "eq",
-		"v": "complete",
-		"vt": "str"
-	}, {
-		"t": "eq",
-		"v": "pending",
-		"vt": "str"
-	}, {
-		"t": "eq",
-		"v": "error",
-		"vt": "str"
-	}],
-	"checkall": "true",
-	"repair": false,
-	"outputs": 3,
-	"x": 1490,
-	"y": 120,
-	"wires": [
-		["c9a65178.d4412"],
-		["6bc4e4dc.77861c"],
-		["4a4a7f93.fff4d"]
-	]
-}, {
-	"id": "cf5fc96d.663c88",
-	"type": "subflow:f3a2d7d6.1e92d8",
-	"z": "842f24dd.ba7438",
-	"name": "",
-	"x": 2060,
-	"y": 180,
-	"wires": [
-		["ef104f2d.d8eb1"]
-	]
-}, {
-	"id": "ce6109dc.8ede08",
-	"type": "delay",
-	"z": "842f24dd.ba7438",
-	"name": "",
-	"pauseType": "delay",
-	"timeout": "1",
-	"timeoutUnits": "seconds",
-	"rate": "1",
-	"nbRateUnits": "1",
-	"rateUnits": "second",
-	"randomFirst": "1",
-	"randomLast": "5",
-	"randomUnits": "seconds",
-	"drop": false,
-	"x": 1860,
-	"y": 120,
-	"wires": [
-		["cf5fc96d.663c88"]
-	]
-}, {
-	"id": "f0c0b7e4.0c2f38",
-	"type": "change",
-	"z": "842f24dd.ba7438",
-	"name": "",
-	"rules": [{
-		"t": "set",
-		"p": "cb.command_id",
-		"pt": "msg",
-		"to": "payload.id",
-		"tot": "msg"
-	}],
-	"action": "",
-	"property": "",
-	"from": "",
-	"to": "",
-	"reg": false,
-	"x": 1210,
-	"y": 120,
-	"wires": [
-		["ef104f2d.d8eb1"]
-	]
-}, {
-	"id": "ba7b8b09.f9d928",
-	"type": "switch",
-	"z": "842f24dd.ba7438",
-	"name": "",
-	"property": "statusCode",
-	"propertyType": "msg",
-	"rules": [{
-		"t": "eq",
-		"v": "200",
-		"vt": "num"
-	}, {
-		"t": "else"
-	}],
-	"checkall": "true",
-	"repair": false,
-	"outputs": 2,
-	"x": 990,
-	"y": 160,
-	"wires": [
-		["f0c0b7e4.0c2f38"],
-		["2962edd1.2de832"]
-	]
-}, {
-	"id": "cf93130a.80821",
-	"type": "status",
-	"z": "842f24dd.ba7438",
-	"name": "",
-	"scope": ["c9a65178.d4412", "6bc4e4dc.77861c", "aa8dcc12.33c36", "2962edd1.2de832", "4a4a7f93.fff4d"],
-	"x": 120,
-	"y": 60,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "c9a65178.d4412",
-	"type": "function",
-	"z": "842f24dd.ba7438",
-	"name": "set status",
-	"func": "node.status({\n    fill: 'green',\n    text: 'executed command: ' + msg.payload.id\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1700,
-	"y": 60,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "6bc4e4dc.77861c",
-	"type": "function",
-	"z": "842f24dd.ba7438",
-	"name": "set status",
-	"func": "node.status({\n    fill: 'yellow',\n    text: 'command pending...'\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1700,
-	"y": 120,
-	"wires": [
-		["ce6109dc.8ede08"]
-	]
-}, {
-	"id": "aa8dcc12.33c36",
-	"type": "function",
-	"z": "842f24dd.ba7438",
-	"name": "set status",
-	"func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        shape: 'ring',\n        text: 'cb not instantiated'\n    });\n}\n\nelse {\n    node.status({\n        fill: 'grey',\n        shape: 'ring',\n        text: 'sending request...'\n    });\n}\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 200,
-	"y": 160,
-	"wires": [
-		["1acacac6.b58f65"]
-	]
-}, {
-	"id": "2962edd1.2de832",
-	"type": "function",
-	"z": "842f24dd.ba7438",
-	"name": "set status",
-	"func": "node.status({\n    fill: 'red',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1160,
-	"y": 180,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "4a4a7f93.fff4d",
-	"type": "function",
-	"z": "842f24dd.ba7438",
-	"name": "set status",
-	"func": "node.status({\n    fill: 'red',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1640,
-	"y": 240,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "1acacac6.b58f65",
-	"type": "delay",
-	"z": "842f24dd.ba7438",
-	"name": "",
-	"pauseType": "delay",
-	"timeout": "1",
-	"timeoutUnits": "seconds",
-	"rate": "1",
-	"nbRateUnits": "1",
-	"rateUnits": "second",
-	"randomFirst": "1",
-	"randomLast": "5",
-	"randomUnits": "seconds",
-	"drop": false,
-	"x": 360,
-	"y": 160,
-	"wires": [
-		["ef26faf6.b59698"]
-	]
-}, {
-	"id": "da49621.33bbaa",
-	"type": "subflow",
-	"name": "get-session-status",
-	"info": "This node gets the status of a LiveResponse session.\n\nIt expects a `msg.cb` object with at least the following keys: `url`, `lr_api_id`, `lr_api_key`, and `session_id`.\n\nReturns an updated `msg` object with the http response.",
-	"category": "CBC LiveResponse",
-	"in": [{
-		"x": 100,
-		"y": 80,
-		"wires": [{
-			"id": "dea6a273.cf891"
-		}]
-	}],
-	"out": [{
-		"x": 680,
-		"y": 80,
-		"wires": [{
-			"id": "99550943.1ed548",
-			"port": 0
-		}]
-	}],
-	"env": [],
-	"color": "#88cde1",
-	"icon": "font-awesome/fa-terminal"
-}, {
-	"id": "dea6a273.cf891",
-	"type": "function",
-	"z": "da49621.33bbaa",
-	"name": "Get Status of Session",
-	"func": "msg.url = [msg.cb.url, '/integrationServices/v3/cblr/session/', msg.cb.session_id].join('');\n\nmsg.headers = {\n    \"X-Auth-Token\": [msg.cb.lr_api_key, msg.cb.lr_api_id].join('/'),\n    \"Content-Type\": \"application/json\"\n};\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 280,
-	"y": 80,
-	"wires": [
-		["99550943.1ed548"]
-	]
-}, {
-	"id": "99550943.1ed548",
-	"type": "http request",
-	"z": "da49621.33bbaa",
-	"name": "",
-	"method": "GET",
-	"ret": "obj",
-	"paytoqs": false,
-	"url": "",
-	"tls": "",
-	"proxy": "",
-	"authType": "",
-	"x": 550,
-	"y": 80,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "47e11a7e.ef2424",
-	"type": "subflow",
-	"name": "start-new-session",
-	"info": "This node starts a new LiveResponse session.\n\nIt expects a `msg.cb` object with at least the following keys: `url`, `lr_api_id`, and `lr_api_key`.\n\n`msg.payload` should be an integer of a device ID that you want to start a session with.\n\nThere are 2 outputs:\n    1. Immidiately after the request\n    2. Waits for the session to be established\n\nReturns an updated `msg` object with the http response and an item of `session_id` to the `msg.cb` object.",
-	"category": "CBC LiveResponse",
-	"in": [{
-		"x": 100,
-		"y": 220,
-		"wires": [{
-			"id": "1a978e67.8260c2"
-		}]
-	}],
-	"out": [{
-		"x": 1400,
-		"y": 140,
-		"wires": [{
-			"id": "2624cc0a.49d554",
-			"port": 0
-		}]
-	}, {
-		"x": 1800,
-		"y": 200,
-		"wires": [{
-			"id": "7bd65217.b45a5c",
-			"port": 0
-		}]
-	}, {
-		"x": 1260,
-		"y": 260,
-		"wires": [{
-			"id": "1dce825a.89e1ce",
-			"port": 0
-		}]
-	}],
-	"env": [],
-	"color": "#88cde1",
-	"inputLabels": ["msg.cb"],
-	"outputLabels": ["response", "after session established", "error"],
-	"icon": "font-awesome/fa-terminal",
-	"status": {
-		"x": 340,
-		"y": 60,
-		"wires": [{
-			"id": "2b8acc96.6ab5b4",
-			"port": 0
-		}]
-	}
-}, {
-	"id": "f841091.dfacdf8",
-	"type": "function",
-	"z": "47e11a7e.ef2424",
-	"name": "prep http query",
-	"func": "msg.url = [msg.cb.url, '/integrationServices/v3/cblr/session/', msg.payload].join('');\n\nmsg.headers = {\n    \"X-Auth-Token\": [msg.cb.lr_api_key, msg.cb.lr_api_id].join('/'),\n    \"Content-Type\": \"application/json\"\n};\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 620,
-	"y": 220,
-	"wires": [
-		["4b77b3bc.024a4c"]
-	]
-}, {
-	"id": "4b77b3bc.024a4c",
-	"type": "http request",
-	"z": "47e11a7e.ef2424",
-	"name": "",
-	"method": "POST",
-	"ret": "obj",
-	"paytoqs": false,
-	"url": "",
-	"tls": "",
-	"proxy": "",
-	"authType": "",
-	"x": 810,
-	"y": 220,
-	"wires": [
-		["2241c6d7.39bfca"]
-	]
-}, {
-	"id": "76f21e64.8c4c2",
-	"type": "switch",
-	"z": "47e11a7e.ef2424",
-	"name": "Switch on Status",
-	"property": "payload.status",
-	"propertyType": "msg",
-	"rules": [{
-		"t": "eq",
-		"v": "ACTIVE",
-		"vt": "str"
-	}, {
-		"t": "eq",
-		"v": "PENDING",
-		"vt": "str"
-	}],
-	"checkall": "true",
-	"repair": false,
-	"outputs": 2,
-	"x": 1470,
-	"y": 220,
-	"wires": [
-		["7bd65217.b45a5c"],
-		["520fb4ad.8368dc"]
-	]
-}, {
-	"id": "4dd80ee1.6da3b",
-	"type": "subflow:da49621.33bbaa",
-	"z": "47e11a7e.ef2424",
-	"name": "",
-	"env": [],
-	"x": 1840,
-	"y": 320,
-	"wires": [
-		["76f21e64.8c4c2"]
-	]
-}, {
-	"id": "6f4b2ea9.52fc2",
-	"type": "delay",
-	"z": "47e11a7e.ef2424",
-	"name": "",
-	"pauseType": "delay",
-	"timeout": "14",
-	"timeoutUnits": "seconds",
-	"rate": "1",
-	"nbRateUnits": "1",
-	"rateUnits": "second",
-	"randomFirst": "1",
-	"randomLast": "5",
-	"randomUnits": "seconds",
-	"drop": false,
-	"x": 1620,
-	"y": 300,
-	"wires": [
-		["fc3b0795.0269e8"]
-	]
-}, {
-	"id": "2624cc0a.49d554",
-	"type": "change",
-	"z": "47e11a7e.ef2424",
-	"name": "",
-	"rules": [{
-		"t": "set",
-		"p": "cb.session_id",
-		"pt": "msg",
-		"to": "payload.id",
-		"tot": "msg"
-	}],
-	"action": "",
-	"property": "",
-	"from": "",
-	"to": "",
-	"reg": false,
-	"x": 1180,
-	"y": 180,
-	"wires": [
-		["76f21e64.8c4c2"]
-	]
-}, {
-	"id": "2241c6d7.39bfca",
-	"type": "switch",
-	"z": "47e11a7e.ef2424",
-	"name": "",
-	"property": "statusCode",
-	"propertyType": "msg",
-	"rules": [{
-		"t": "eq",
-		"v": "200",
-		"vt": "num"
-	}, {
-		"t": "else"
-	}],
-	"checkall": "true",
-	"repair": false,
-	"outputs": 2,
-	"x": 970,
-	"y": 220,
-	"wires": [
-		["2624cc0a.49d554"],
-		["1dce825a.89e1ce"]
-	]
-}, {
-	"id": "520fb4ad.8368dc",
-	"type": "function",
-	"z": "47e11a7e.ef2424",
-	"name": "set status",
-	"func": "node.status({\n    fill: 'yellow',\n    text: 'waiting for session...'\n})\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1480,
-	"y": 300,
-	"wires": [
-		["6f4b2ea9.52fc2"]
-	]
-}, {
-	"id": "7bd65217.b45a5c",
-	"type": "function",
-	"z": "47e11a7e.ef2424",
-	"name": "set status",
-	"func": "node.status({\n    fill: 'green',\n    text: 'connected: ' + msg.cb.session_id\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1680,
-	"y": 200,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "1a978e67.8260c2",
-	"type": "function",
-	"z": "47e11a7e.ef2424",
-	"name": "set status",
-	"func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n}\n\nelse {\n    node.status({\n        fill: 'grey',\n        text: 'getting data...'\n    });\n}\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 240,
-	"y": 220,
-	"wires": [
-		["e0c94a78.3d32b8"]
-	]
-}, {
-	"id": "2b8acc96.6ab5b4",
-	"type": "status",
-	"z": "47e11a7e.ef2424",
-	"name": "",
-	"scope": ["520fb4ad.8368dc", "7bd65217.b45a5c", "1a978e67.8260c2", "1dce825a.89e1ce", "fc3b0795.0269e8"],
-	"x": 200,
-	"y": 60,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "1dce825a.89e1ce",
-	"type": "function",
-	"z": "47e11a7e.ef2424",
-	"name": "set status",
-	"func": "node.status({\n    fill: 'red',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1140,
-	"y": 260,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "fc3b0795.0269e8",
-	"type": "function",
-	"z": "47e11a7e.ef2424",
-	"name": "set status",
-	"func": "node.status({\n    fill: 'grey',\n    text: 'checking status...'\n})\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1480,
-	"y": 360,
-	"wires": [
-		["20fcdd82.f15432"]
-	]
-}, {
-	"id": "20fcdd82.f15432",
-	"type": "delay",
-	"z": "47e11a7e.ef2424",
-	"name": "",
-	"pauseType": "delay",
-	"timeout": "1",
-	"timeoutUnits": "seconds",
-	"rate": "1",
-	"nbRateUnits": "1",
-	"rateUnits": "second",
-	"randomFirst": "1",
-	"randomLast": "5",
-	"randomUnits": "seconds",
-	"drop": false,
-	"x": 1620,
-	"y": 360,
-	"wires": [
-		["4dd80ee1.6da3b"]
-	]
-}, {
-	"id": "e0c94a78.3d32b8",
-	"type": "delay",
-	"z": "47e11a7e.ef2424",
-	"name": "",
-	"pauseType": "delay",
-	"timeout": "1",
-	"timeoutUnits": "seconds",
-	"rate": "1",
-	"nbRateUnits": "1",
-	"rateUnits": "second",
-	"randomFirst": "1",
-	"randomLast": "5",
-	"randomUnits": "seconds",
-	"drop": false,
-	"x": 420,
-	"y": 220,
-	"wires": [
-		["f841091.dfacdf8"]
-	]
-}, {
-	"id": "30a327de.bd9808",
-	"type": "tab",
-	"label": "VMware Carbon Black Cloud: Live Response",
-	"disabled": false,
-	"info": ""
-}, {
-	"id": "c9141dd6.885a7",
-	"type": "subflow:47e11a7e.ef2424",
-	"z": "30a327de.bd9808",
-	"name": "",
-	"x": 310,
-	"y": 180,
-	"wires": [
-		[],
-		[],
-		[]
-	]
-}, {
-	"id": "74ed171b.3fb6d8",
-	"type": "subflow:da49621.33bbaa",
-	"z": "30a327de.bd9808",
-	"name": "",
-	"x": 310,
-	"y": 240,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "2c059b24.cd9874",
-	"type": "subflow:842f24dd.ba7438",
-	"z": "30a327de.bd9808",
-	"name": "",
-	"x": 300,
-	"y": 300,
-	"wires": [
-		[],
-		[],
-		[]
-	]
-}, {
-	"id": "71665c53.ac91c4",
-	"type": "subflow:f3a2d7d6.1e92d8",
-	"z": "30a327de.bd9808",
-	"name": "",
-	"x": 320,
-	"y": 360,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "5213261f.8f8c58",
-	"type": "subflow:e38b208d.4d8fa",
-	"z": "30a327de.bd9808",
-	"name": "",
-	"x": 310,
-	"y": 400,
-	"wires": [
-		[],
-		[]
-	]
-}, {
-	"id": "21828406.ce5d3c",
-	"type": "subflow:48d77de7.0711a4",
-	"z": "30a327de.bd9808",
-	"name": "",
-	"x": 290,
-	"y": 440,
-	"wires": [
-		[],
-		[]
-	]
-}, {
-	"id": "b8ba5d96.9ed23",
-	"type": "subflow:49195052.02eab",
-	"z": "30a327de.bd9808",
-	"name": "",
-	"x": 300,
-	"y": 480,
-	"wires": [
-		[],
-		[]
-	]
-}, {
-	"id": "3ed27f50.97025",
-	"type": "subflow:f47e209d.f96e9",
-	"z": "30a327de.bd9808",
-	"name": "",
-	"x": 300,
-	"y": 520,
-	"wires": [
-		[],
-		[]
-	]
-}]
+[
+    {
+        "id": "49195052.02eab",
+        "type": "subflow",
+        "name": "get-file-content",
+        "info": "Get the contents of a file.\n\n`msg.payload` should be a string of a `file_id`.\n\n[See the Documentation](https://developer.carbonblack.com/reference/carbon-black-cloud/cb-defense/latest/live-response-api/#get-file-content)",
+        "category": "CBC LiveResponse",
+        "in": [
+            {
+                "x": 140,
+                "y": 180,
+                "wires": [
+                    {
+                        "id": "e79538b3.b85418"
+                    }
+                ]
+            }
+        ],
+        "out": [
+            {
+                "x": 1360,
+                "y": 140,
+                "wires": [
+                    {
+                        "id": "e7e55aa.4a378a8",
+                        "port": 0
+                    }
+                ]
+            },
+            {
+                "x": 1360,
+                "y": 220,
+                "wires": [
+                    {
+                        "id": "6aa34e7a.ba93e",
+                        "port": 0
+                    }
+                ]
+            }
+        ],
+        "env": [],
+        "color": "#88cde1",
+        "icon": "font-awesome/fa-terminal",
+        "status": {
+            "x": 340,
+            "y": 80,
+            "wires": [
+                {
+                    "id": "e5dcd78e.eddbd8",
+                    "port": 0
+                }
+            ]
+        }
+    },
+    {
+        "id": "b4bd78a6.5f5a48",
+        "type": "function",
+        "z": "49195052.02eab",
+        "name": "Get File Content",
+        "func": "msg.url = [msg.cb.url, 'integrationServices/v3/cblr/session', msg.cb.session_id, 'file', msg.payload, 'content'].join('/');\n\nmsg.headers = {\n    'X-Auth-Token': [msg.cb.lr_api_key, msg.cb.lr_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 620,
+        "y": 180,
+        "wires": [
+            [
+                "37cb3f27.35ab7"
+            ]
+        ]
+    },
+    {
+        "id": "37cb3f27.35ab7",
+        "type": "http request",
+        "z": "49195052.02eab",
+        "name": "",
+        "method": "GET",
+        "ret": "bin",
+        "paytoqs": false,
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "authType": "",
+        "x": 830,
+        "y": 180,
+        "wires": [
+            [
+                "3f0eb581.e808ba"
+            ]
+        ]
+    },
+    {
+        "id": "3f0eb581.e808ba",
+        "type": "switch",
+        "z": "49195052.02eab",
+        "name": "statusCode",
+        "property": "statusCode",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "200",
+                "vt": "num"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 1030,
+        "y": 180,
+        "wires": [
+            [
+                "e7e55aa.4a378a8"
+            ],
+            [
+                "6aa34e7a.ba93e"
+            ]
+        ]
+    },
+    {
+        "id": "e5dcd78e.eddbd8",
+        "type": "status",
+        "z": "49195052.02eab",
+        "name": "",
+        "scope": [
+            "e7e55aa.4a378a8",
+            "e79538b3.b85418",
+            "6aa34e7a.ba93e"
+        ],
+        "x": 200,
+        "y": 80,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "e7e55aa.4a378a8",
+        "type": "function",
+        "z": "49195052.02eab",
+        "name": "return success",
+        "func": "node.status({\n    fill: 'green',\n    text: 'downloaded file'\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1240,
+        "y": 140,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "e79538b3.b85418",
+        "type": "function",
+        "z": "49195052.02eab",
+        "name": "set status",
+        "func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        shape: 'ring',\n        text: 'cb not instantiated'\n    });\n}\n\nelse {\n    node.status({\n        fill: 'grey',\n        shape: 'ring',\n        text: 'getting file...'\n    });\n}\n\nmsg.delay = msg.cb.delay || 1;\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 280,
+        "y": 180,
+        "wires": [
+            [
+                "b7e58616.80ff98"
+            ]
+        ]
+    },
+    {
+        "id": "6aa34e7a.ba93e",
+        "type": "function",
+        "z": "49195052.02eab",
+        "name": "return error",
+        "func": "node.status({\n    fill: 'red',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1230,
+        "y": 220,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "b7e58616.80ff98",
+        "type": "delay",
+        "z": "49195052.02eab",
+        "name": "",
+        "pauseType": "delayv",
+        "timeout": "1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "x": 440,
+        "y": 180,
+        "wires": [
+            [
+                "b4bd78a6.5f5a48"
+            ]
+        ]
+    },
+    {
+        "id": "48d77de7.0711a4",
+        "type": "subflow",
+        "name": "upload-file",
+        "info": "This will upload a file to an endpoint and return `msg.payload.file_id`. This `file_id` can be used in a subsequent `put-file` request to put the file on an endpoint using Live Response.\n\n`msg.payload` should be the contents of the file you want to post. `msg.filename` is required as well.",
+        "category": "CBC LiveResponse",
+        "in": [
+            {
+                "x": 120,
+                "y": 140,
+                "wires": [
+                    {
+                        "id": "f4ec2b9b.84f1d8"
+                    }
+                ]
+            }
+        ],
+        "out": [
+            {
+                "x": 1440,
+                "y": 100,
+                "wires": [
+                    {
+                        "id": "de00f5c3.8ba9d8",
+                        "port": 0
+                    }
+                ]
+            },
+            {
+                "x": 1440,
+                "y": 180,
+                "wires": [
+                    {
+                        "id": "920bba95.c6c118",
+                        "port": 0
+                    }
+                ]
+            }
+        ],
+        "env": [],
+        "color": "#88cde1",
+        "icon": "font-awesome/fa-terminal",
+        "status": {
+            "x": 320,
+            "y": 80,
+            "wires": [
+                {
+                    "id": "462f355c.39b10c",
+                    "port": 0
+                }
+            ]
+        }
+    },
+    {
+        "id": "2c4b9b0f.d699c4",
+        "type": "switch",
+        "z": "48d77de7.0711a4",
+        "name": "status code",
+        "property": "statusCode",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "200",
+                "vt": "num"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 1090,
+        "y": 140,
+        "wires": [
+            [
+                "de00f5c3.8ba9d8"
+            ],
+            [
+                "920bba95.c6c118"
+            ]
+        ]
+    },
+    {
+        "id": "f4ec2b9b.84f1d8",
+        "type": "function",
+        "z": "48d77de7.0711a4",
+        "name": "set status",
+        "func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n    return;\n}\n\nnode.status({\n    fill: 'grey',\n    text: 'getting policies...'\n});\n\nmsg.delay = msg.cb.delay;\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 240,
+        "y": 140,
+        "wires": [
+            [
+                "799b0a3f.7fb5b4"
+            ]
+        ]
+    },
+    {
+        "id": "920bba95.c6c118",
+        "type": "function",
+        "z": "48d77de7.0711a4",
+        "name": "set status",
+        "func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1300,
+        "y": 180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "799b0a3f.7fb5b4",
+        "type": "delay",
+        "z": "48d77de7.0711a4",
+        "name": "delay",
+        "pauseType": "delayv",
+        "timeout": "1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "x": 410,
+        "y": 140,
+        "wires": [
+            [
+                "11a823f1.85cefc"
+            ]
+        ]
+    },
+    {
+        "id": "462f355c.39b10c",
+        "type": "status",
+        "z": "48d77de7.0711a4",
+        "name": "",
+        "scope": [
+            "f4ec2b9b.84f1d8",
+            "920bba95.c6c118",
+            "de00f5c3.8ba9d8"
+        ],
+        "x": 200,
+        "y": 80,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "de00f5c3.8ba9d8",
+        "type": "function",
+        "z": "48d77de7.0711a4",
+        "name": "set status",
+        "func": "node.status({\n    fill: 'green',\n    text: 'found process'\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1300,
+        "y": 100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "37e31960.6148a6",
+        "type": "http request",
+        "z": "48d77de7.0711a4",
+        "name": "",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": false,
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "authType": "",
+        "x": 890,
+        "y": 140,
+        "wires": [
+            [
+                "2c4b9b0f.d699c4"
+            ]
+        ]
+    },
+    {
+        "id": "11a823f1.85cefc",
+        "type": "function",
+        "z": "48d77de7.0711a4",
+        "name": "Format the header and payload",
+        "func": "msg.url = [msg.cb.url, 'integrationServices/v3/cblr/session', msg.cb.session_id, 'file'].join('/');\n\nmsg.headers = {\n    \"X-Auth-Token\": [msg.cb.lr_api_key, msg.cb.lr_api_id].join('/'),\n    \"Content-Type\": \"multipart/form-data; boundary=------------------------d74496d66958873e\"\n};\n\n\nmsg.payload = '--------------------------d74496d66958873e\\r\\n' +\n'Content-Disposition: form-data; name=\"select\"\\r\\n' +\n'\\r\\n' +\n'true\\r\\n' +\n'--------------------------d74496d66958873e\\r\\n' +\n'Content-Disposition: form-data; name=\"print\"\\r\\n' +\n'\\r\\n' +\n'true\\r\\n' +\n'--------------------------d74496d66958873e\\r\\n' +\n'Content-Disposition: form-data; name=\"file\"; filename=\"' + msg.filename + '\"\\r\\n' +\n'Content-Type: application/octet-stream\\r\\n' +\n'\\r\\n' +\nmsg.payload + '\\r\\n' +\n'--------------------------d74496d66958873e--\\r\\n';\n\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 630,
+        "y": 140,
+        "wires": [
+            [
+                "37e31960.6148a6"
+            ]
+        ]
+    },
+    {
+        "id": "47e11a7e.ef2424",
+        "type": "subflow",
+        "name": "start-new-session",
+        "info": "This node starts a new LiveResponse session.\n\nIt expects a `msg.cb` object with at least the following keys: `url`, `lr_api_id`, and `lr_api_key`.\n\n`msg.payload` should be an integer of a device ID that you want to start a session with.\n\nThere are 2 outputs:\n    1. Immidiately after the request\n    2. Waits for the session to be established\n\nReturns an updated `msg` object with the http response and an item of `session_id` to the `msg.cb` object.",
+        "category": "CBC LiveResponse",
+        "in": [
+            {
+                "x": 100,
+                "y": 220,
+                "wires": [
+                    {
+                        "id": "1a978e67.8260c2"
+                    }
+                ]
+            }
+        ],
+        "out": [
+            {
+                "x": 1400,
+                "y": 140,
+                "wires": [
+                    {
+                        "id": "2624cc0a.49d554",
+                        "port": 0
+                    }
+                ]
+            },
+            {
+                "x": 1800,
+                "y": 200,
+                "wires": [
+                    {
+                        "id": "7bd65217.b45a5c",
+                        "port": 0
+                    }
+                ]
+            },
+            {
+                "x": 1260,
+                "y": 260,
+                "wires": [
+                    {
+                        "id": "1dce825a.89e1ce",
+                        "port": 0
+                    }
+                ]
+            }
+        ],
+        "env": [],
+        "color": "#88cde1",
+        "inputLabels": [
+            "msg.cb"
+        ],
+        "outputLabels": [
+            "response",
+            "after session established",
+            "error"
+        ],
+        "icon": "font-awesome/fa-terminal",
+        "status": {
+            "x": 340,
+            "y": 60,
+            "wires": [
+                {
+                    "id": "2b8acc96.6ab5b4",
+                    "port": 0
+                }
+            ]
+        }
+    },
+    {
+        "id": "f841091.dfacdf8",
+        "type": "function",
+        "z": "47e11a7e.ef2424",
+        "name": "prep http query",
+        "func": "msg.url = [msg.cb.url, '/integrationServices/v3/cblr/session/', msg.payload].join('');\n\nmsg.headers = {\n    \"X-Auth-Token\": [msg.cb.lr_api_key, msg.cb.lr_api_id].join('/'),\n    \"Content-Type\": \"application/json\"\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 620,
+        "y": 220,
+        "wires": [
+            [
+                "4b77b3bc.024a4c"
+            ]
+        ]
+    },
+    {
+        "id": "4b77b3bc.024a4c",
+        "type": "http request",
+        "z": "47e11a7e.ef2424",
+        "name": "",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": false,
+        "url": "",
+        "tls": "",
+        "proxy": "",
+        "authType": "",
+        "x": 810,
+        "y": 220,
+        "wires": [
+            [
+                "2241c6d7.39bfca"
+            ]
+        ]
+    },
+    {
+        "id": "76f21e64.8c4c2",
+        "type": "switch",
+        "z": "47e11a7e.ef2424",
+        "name": "Switch on Status",
+        "property": "payload.status",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "ACTIVE",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "PENDING",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 1470,
+        "y": 220,
+        "wires": [
+            [
+                "7bd65217.b45a5c"
+            ],
+            [
+                "520fb4ad.8368dc"
+            ]
+        ]
+    },
+    {
+        "id": "4dd80ee1.6da3b",
+        "type": "subflow:da49621.33bbaa",
+        "z": "47e11a7e.ef2424",
+        "name": "",
+        "env": [],
+        "x": 1840,
+        "y": 320,
+        "wires": [
+            [
+                "76f21e64.8c4c2"
+            ]
+        ]
+    },
+    {
+        "id": "6f4b2ea9.52fc2",
+        "type": "delay",
+        "z": "47e11a7e.ef2424",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "14",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "x": 1620,
+        "y": 300,
+        "wires": [
+            [
+                "fc3b0795.0269e8"
+            ]
+        ]
+    },
+    {
+        "id": "2624cc0a.49d554",
+        "type": "change",
+        "z": "47e11a7e.ef2424",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "cb.session_id",
+                "pt": "msg",
+                "to": "payload.id",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1180,
+        "y": 180,
+        "wires": [
+            [
+                "76f21e64.8c4c2"
+            ]
+        ]
+    },
+    {
+        "id": "2241c6d7.39bfca",
+        "type": "switch",
+        "z": "47e11a7e.ef2424",
+        "name": "",
+        "property": "statusCode",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "200",
+                "vt": "num"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 970,
+        "y": 220,
+        "wires": [
+            [
+                "2624cc0a.49d554"
+            ],
+            [
+                "1dce825a.89e1ce"
+            ]
+        ]
+    },
+    {
+        "id": "520fb4ad.8368dc",
+        "type": "function",
+        "z": "47e11a7e.ef2424",
+        "name": "set status",
+        "func": "node.status({\n    fill: 'yellow',\n    text: 'waiting for session...'\n})\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1480,
+        "y": 300,
+        "wires": [
+            [
+                "6f4b2ea9.52fc2"
+            ]
+        ]
+    },
+    {
+        "id": "7bd65217.b45a5c",
+        "type": "function",
+        "z": "47e11a7e.ef2424",
+        "name": "set status",
+        "func": "node.status({\n    fill: 'green',\n    text: 'connected: ' + msg.payload.id\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1680,
+        "y": 200,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "1a978e67.8260c2",
+        "type": "function",
+        "z": "47e11a7e.ef2424",
+        "name": "set status",
+        "func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n}\n\nelse {\n    node.status({\n        fill: 'grey',\n        text: 'getting data...'\n    });\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 240,
+        "y": 220,
+        "wires": [
+            [
+                "e0c94a78.3d32b8"
+            ]
+        ]
+    },
+    {
+        "id": "2b8acc96.6ab5b4",
+        "type": "status",
+        "z": "47e11a7e.ef2424",
+        "name": "",
+        "scope": [
+            "520fb4ad.8368dc",
+            "7bd65217.b45a5c",
+            "1a978e67.8260c2",
+            "1dce825a.89e1ce",
+            "fc3b0795.0269e8"
+        ],
+        "x": 200,
+        "y": 60,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "1dce825a.89e1ce",
+        "type": "function",
+        "z": "47e11a7e.ef2424",
+        "name": "set status",
+        "func": "node.status({\n    fill: 'red',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1140,
+        "y": 260,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "fc3b0795.0269e8",
+        "type": "function",
+        "z": "47e11a7e.ef2424",
+        "name": "set status",
+        "func": "node.status({\n    fill: 'grey',\n    text: 'checking status...'\n})\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1480,
+        "y": 360,
+        "wires": [
+            [
+                "20fcdd82.f15432"
+            ]
+        ]
+    },
+    {
+        "id": "20fcdd82.f15432",
+        "type": "delay",
+        "z": "47e11a7e.ef2424",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "x": 1620,
+        "y": 360,
+        "wires": [
+            [
+                "4dd80ee1.6da3b"
+            ]
+        ]
+    },
+    {
+        "id": "e0c94a78.3d32b8",
+        "type": "delay",
+        "z": "47e11a7e.ef2424",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "x": 420,
+        "y": 220,
+        "wires": [
+            [
+                "f841091.dfacdf8"
+            ]
+        ]
+    },
+    {
+        "id": "da49621.33bbaa",
+        "type": "subflow",
+        "name": "get-session-status",
+        "info": "This node gets the status of a LiveResponse session.\n\nIt expects a `msg.cb` object with at least the following keys: `url`, `lr_api_id`, `lr_api_key`, and `session_id`.\n\nReturns an updated `msg` object with the http response.",
+        "category": "CBC LiveResponse",
+        "in": [
+            {
+                "x": 100,
+                "y": 80,
+                "wires": [
+                    {
+                        "id": "dea6a273.cf891"
+                    }
+                ]
+            }
+        ],
+        "out": [
+            {
+                "x": 680,
+                "y": 80,
+                "wires": [
+                    {
+                        "id": "99550943.1ed548",
+                        "port": 0
+                    }
+                ]
+            }
+        ],
+        "env": [],
+        "color": "#88cde1",
+        "icon": "font-awesome/fa-terminal"
+    },
+    {
+        "id": "dea6a273.cf891",
+        "type": "function",
+        "z": "da49621.33bbaa",
+        "name": "Get Status of Session",
+        "func": "msg.url = [msg.cb.url, '/integrationServices/v3/cblr/session/', msg.cb.session_id].join('');\n\nmsg.headers = {\n    \"X-Auth-Token\": [msg.cb.lr_api_key, msg.cb.lr_api_id].join('/'),\n    \"Content-Type\": \"application/json\"\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 280,
+        "y": 80,
+        "wires": [
+            [
+                "99550943.1ed548"
+            ]
+        ]
+    },
+    {
+        "id": "99550943.1ed548",
+        "type": "http request",
+        "z": "da49621.33bbaa",
+        "name": "",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": false,
+        "url": "",
+        "tls": "",
+        "proxy": "",
+        "authType": "",
+        "x": 550,
+        "y": 80,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "f47e209d.f96e9",
+        "type": "subflow",
+        "name": "close-session",
+        "info": "This node closes a connection to a LiveResponse session.\n\nIt expects a `msg.cb` object with at least the following keys: `url`, `lr_api_id`, and `lr_api_key`.\n\n`msg.payload` is expected to be an active `session_id`.\n\nReturns an updated `msg` object with http responses.",
+        "category": "CBC LiveResponse",
+        "in": [
+            {
+                "x": 260,
+                "y": 120,
+                "wires": [
+                    {
+                        "id": "1de6408.1baacc"
+                    }
+                ]
+            }
+        ],
+        "out": [
+            {
+                "x": 1200,
+                "y": 80,
+                "wires": [
+                    {
+                        "id": "f0c21268.d5019",
+                        "port": 0
+                    }
+                ]
+            },
+            {
+                "x": 1200,
+                "y": 160,
+                "wires": [
+                    {
+                        "id": "e6afa22b.df693",
+                        "port": 0
+                    }
+                ]
+            }
+        ],
+        "env": [],
+        "color": "#88cde1",
+        "inputLabels": [
+            "msg.cb"
+        ],
+        "outputLabels": [
+            "response",
+            "error"
+        ],
+        "icon": "font-awesome/fa-terminal",
+        "status": {
+            "x": 440,
+            "y": 60,
+            "wires": [
+                {
+                    "id": "f292b3e0.a4958",
+                    "port": 0
+                }
+            ]
+        }
+    },
+    {
+        "id": "a501114b.657cd",
+        "type": "function",
+        "z": "f47e209d.f96e9",
+        "name": "Close Session",
+        "func": "msg.url = [msg.cb.url, 'integrationServices/v3/cblr/session'].join('/');\n\nmsg.headers = {\n    'X-Auth-Token': [msg.cb.lr_api_key, msg.cb.lr_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nmsg.payload = {\n    session_id: msg.payload,\n    status: 'CLOSE'\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 560,
+        "y": 120,
+        "wires": [
+            [
+                "36bba513.a986fa"
+            ]
+        ]
+    },
+    {
+        "id": "36bba513.a986fa",
+        "type": "http request",
+        "z": "f47e209d.f96e9",
+        "name": "",
+        "method": "PUT",
+        "ret": "obj",
+        "paytoqs": false,
+        "url": "",
+        "tls": "",
+        "proxy": "",
+        "authType": "",
+        "x": 750,
+        "y": 120,
+        "wires": [
+            [
+                "f21b34c3.517758"
+            ]
+        ]
+    },
+    {
+        "id": "f21b34c3.517758",
+        "type": "switch",
+        "z": "f47e209d.f96e9",
+        "name": "",
+        "property": "statusCode",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "200",
+                "vt": "num"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 910,
+        "y": 120,
+        "wires": [
+            [
+                "f0c21268.d5019"
+            ],
+            [
+                "e6afa22b.df693"
+            ]
+        ]
+    },
+    {
+        "id": "f0c21268.d5019",
+        "type": "function",
+        "z": "f47e209d.f96e9",
+        "name": "set status",
+        "func": "node.status({\n    fill: 'green',\n    text: 'session closed'\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1080,
+        "y": 80,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "f292b3e0.a4958",
+        "type": "status",
+        "z": "f47e209d.f96e9",
+        "name": "",
+        "scope": [
+            "f0c21268.d5019",
+            "1de6408.1baacc",
+            "e6afa22b.df693"
+        ],
+        "x": 300,
+        "y": 60,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "1de6408.1baacc",
+        "type": "function",
+        "z": "f47e209d.f96e9",
+        "name": "set status",
+        "func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n}\n\nelse {\n    node.status({\n        fill: 'grey',\n        text: 'getting data...'\n    });\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 380,
+        "y": 120,
+        "wires": [
+            [
+                "a501114b.657cd"
+            ]
+        ]
+    },
+    {
+        "id": "e6afa22b.df693",
+        "type": "function",
+        "z": "f47e209d.f96e9",
+        "name": "set status",
+        "func": "node.status({\n    fill: 'red',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1080,
+        "y": 160,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "842f24dd.ba7438",
+        "type": "subflow",
+        "name": "send-command",
+        "info": "This node sends a command to a LiveResponse session.  \n\nIt expects a `msg.cb` object with at least the following keys: `url`, `lr_api_id`, `lr_api_key`, `session_id` and `payload`.  \n\nThe `msg.payload` should be the body of the request as defined in the [documentation](https://developer.carbonblack.com/reference/carbon-black-cloud/cb-defense/latest/live-response-api/#command-objects).  \n\nThis is an example of a `msg.payload` to list a directory: \n\n```\n{\n\t\"session_id\": msg.cb.session_id,\n\t\"name\": \"directory list\",\n\t\"object\": \"C:\\\\Users\\\\\"\n}\n```\n  \nReturns an updated `msg` object with the http response.",
+        "category": "CBC LiveResponse",
+        "in": [
+            {
+                "x": 80,
+                "y": 160,
+                "wires": [
+                    {
+                        "id": "aa8dcc12.33c36"
+                    }
+                ]
+            }
+        ],
+        "out": [
+            {
+                "x": 1420,
+                "y": 60,
+                "wires": [
+                    {
+                        "id": "f0c0b7e4.0c2f38",
+                        "port": 0
+                    }
+                ]
+            },
+            {
+                "x": 1860,
+                "y": 60,
+                "wires": [
+                    {
+                        "id": "c9a65178.d4412",
+                        "port": 0
+                    }
+                ]
+            },
+            {
+                "x": 1820,
+                "y": 300,
+                "wires": [
+                    {
+                        "id": "2962edd1.2de832",
+                        "port": 0
+                    },
+                    {
+                        "id": "4a4a7f93.fff4d",
+                        "port": 0
+                    }
+                ]
+            }
+        ],
+        "env": [],
+        "color": "#88cde1",
+        "outputLabels": [
+            "response",
+            "after command confirmed",
+            "error"
+        ],
+        "icon": "font-awesome/fa-terminal",
+        "status": {
+            "x": 280,
+            "y": 60,
+            "wires": [
+                {
+                    "id": "cf93130a.80821",
+                    "port": 0
+                }
+            ]
+        }
+    },
+    {
+        "id": "ef26faf6.b59698",
+        "type": "function",
+        "z": "842f24dd.ba7438",
+        "name": "Send Command to Endpoint",
+        "func": "msg.url = [msg.cb.url, 'integrationServices/v3/cblr/session', msg.cb.session_id, 'command'].join('/');\n\nmsg.headers = {\n    \"X-Auth-Token\": [msg.cb.lr_api_key, msg.cb.lr_api_id].join('/'),\n    \"Content-Type\": \"application/json\"\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 580,
+        "y": 160,
+        "wires": [
+            [
+                "96d574b1.438158"
+            ]
+        ]
+    },
+    {
+        "id": "96d574b1.438158",
+        "type": "http request",
+        "z": "842f24dd.ba7438",
+        "name": "",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": false,
+        "url": "",
+        "tls": "",
+        "proxy": "",
+        "authType": "",
+        "x": 810,
+        "y": 160,
+        "wires": [
+            [
+                "ba7b8b09.f9d928"
+            ]
+        ]
+    },
+    {
+        "id": "ef104f2d.d8eb1",
+        "type": "switch",
+        "z": "842f24dd.ba7438",
+        "name": "Switch on Status",
+        "property": "payload.status",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "complete",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "pending",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "error",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 3,
+        "x": 1490,
+        "y": 120,
+        "wires": [
+            [
+                "c9a65178.d4412"
+            ],
+            [
+                "6bc4e4dc.77861c"
+            ],
+            [
+                "4a4a7f93.fff4d"
+            ]
+        ]
+    },
+    {
+        "id": "cf5fc96d.663c88",
+        "type": "subflow:f3a2d7d6.1e92d8",
+        "z": "842f24dd.ba7438",
+        "name": "",
+        "x": 2060,
+        "y": 180,
+        "wires": [
+            [
+                "ef104f2d.d8eb1"
+            ]
+        ]
+    },
+    {
+        "id": "ce6109dc.8ede08",
+        "type": "delay",
+        "z": "842f24dd.ba7438",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "x": 1860,
+        "y": 120,
+        "wires": [
+            [
+                "cf5fc96d.663c88"
+            ]
+        ]
+    },
+    {
+        "id": "f0c0b7e4.0c2f38",
+        "type": "change",
+        "z": "842f24dd.ba7438",
+        "name": "",
+        "rules": [
+            {
+                "t": "set",
+                "p": "cb.command_id",
+                "pt": "msg",
+                "to": "payload.id",
+                "tot": "msg"
+            }
+        ],
+        "action": "",
+        "property": "",
+        "from": "",
+        "to": "",
+        "reg": false,
+        "x": 1210,
+        "y": 120,
+        "wires": [
+            [
+                "ef104f2d.d8eb1"
+            ]
+        ]
+    },
+    {
+        "id": "ba7b8b09.f9d928",
+        "type": "switch",
+        "z": "842f24dd.ba7438",
+        "name": "",
+        "property": "statusCode",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "200",
+                "vt": "num"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 990,
+        "y": 160,
+        "wires": [
+            [
+                "f0c0b7e4.0c2f38"
+            ],
+            [
+                "2962edd1.2de832"
+            ]
+        ]
+    },
+    {
+        "id": "cf93130a.80821",
+        "type": "status",
+        "z": "842f24dd.ba7438",
+        "name": "",
+        "scope": [
+            "c9a65178.d4412",
+            "6bc4e4dc.77861c",
+            "aa8dcc12.33c36",
+            "2962edd1.2de832",
+            "4a4a7f93.fff4d"
+        ],
+        "x": 120,
+        "y": 60,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "c9a65178.d4412",
+        "type": "function",
+        "z": "842f24dd.ba7438",
+        "name": "set status",
+        "func": "node.status({\n    fill: 'green',\n    text: 'executed command: ' + msg.payload.id\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1700,
+        "y": 60,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "6bc4e4dc.77861c",
+        "type": "function",
+        "z": "842f24dd.ba7438",
+        "name": "set status",
+        "func": "node.status({\n    fill: 'yellow',\n    text: 'command pending...'\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1700,
+        "y": 120,
+        "wires": [
+            [
+                "ce6109dc.8ede08"
+            ]
+        ]
+    },
+    {
+        "id": "aa8dcc12.33c36",
+        "type": "function",
+        "z": "842f24dd.ba7438",
+        "name": "set status",
+        "func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        shape: 'ring',\n        text: 'cb not instantiated'\n    });\n}\n\nelse {\n    node.status({\n        fill: 'grey',\n        shape: 'ring',\n        text: 'sending request...'\n    });\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 200,
+        "y": 160,
+        "wires": [
+            [
+                "1acacac6.b58f65"
+            ]
+        ]
+    },
+    {
+        "id": "2962edd1.2de832",
+        "type": "function",
+        "z": "842f24dd.ba7438",
+        "name": "set status",
+        "func": "node.status({\n    fill: 'red',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1160,
+        "y": 180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "4a4a7f93.fff4d",
+        "type": "function",
+        "z": "842f24dd.ba7438",
+        "name": "set status",
+        "func": "node.status({\n    fill: 'red',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1640,
+        "y": 240,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "1acacac6.b58f65",
+        "type": "delay",
+        "z": "842f24dd.ba7438",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "x": 360,
+        "y": 160,
+        "wires": [
+            [
+                "ef26faf6.b59698"
+            ]
+        ]
+    },
+    {
+        "id": "f3a2d7d6.1e92d8",
+        "type": "subflow",
+        "name": "get-command-status",
+        "info": "This node gets the status of a LiveResponse command.\n\nIt expects a `msg.cb` object with at least the following keys: `url`, `lr_api_id`, `lr_api_key`, `session_id`, and `command_id`.\n\nReturns an updated `msg` object with the http response.",
+        "category": "CBC LiveResponse",
+        "in": [
+            {
+                "x": 240,
+                "y": 100,
+                "wires": [
+                    {
+                        "id": "b5ea2c40.c33f4"
+                    }
+                ]
+            }
+        ],
+        "out": [
+            {
+                "x": 900,
+                "y": 100,
+                "wires": [
+                    {
+                        "id": "219ec24c.fc1c8e",
+                        "port": 0
+                    }
+                ]
+            }
+        ],
+        "env": [],
+        "color": "#88cde1",
+        "icon": "font-awesome/fa-terminal"
+    },
+    {
+        "id": "b5ea2c40.c33f4",
+        "type": "function",
+        "z": "f3a2d7d6.1e92d8",
+        "name": "Get Status of Command",
+        "func": "msg.url = [msg.cb.url, '/integrationServices/v3/cblr/session/', msg.cb.session_id, '/command/', msg.cb.command_id].join('');\n\nmsg.headers = {\n    'X-Auth-Token': [msg.cb.lr_api_key, msg.cb.lr_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 470,
+        "y": 100,
+        "wires": [
+            [
+                "219ec24c.fc1c8e"
+            ]
+        ]
+    },
+    {
+        "id": "219ec24c.fc1c8e",
+        "type": "http request",
+        "z": "f3a2d7d6.1e92d8",
+        "name": "",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": false,
+        "url": "",
+        "tls": "",
+        "proxy": "",
+        "authType": "",
+        "x": 710,
+        "y": 100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "e38b208d.4d8fa",
+        "type": "subflow",
+        "name": "get-file-metadata",
+        "info": "",
+        "category": "CBC LiveResponse",
+        "in": [
+            {
+                "x": 120,
+                "y": 140,
+                "wires": [
+                    {
+                        "id": "70747deb.c248d4"
+                    }
+                ]
+            }
+        ],
+        "out": [
+            {
+                "x": 1380,
+                "y": 100,
+                "wires": [
+                    {
+                        "id": "b27a3045.adeed",
+                        "port": 0
+                    }
+                ]
+            },
+            {
+                "x": 1380,
+                "y": 180,
+                "wires": [
+                    {
+                        "id": "ad03d9cb.c617b8",
+                        "port": 0
+                    }
+                ]
+            }
+        ],
+        "env": [],
+        "color": "#88cde1",
+        "icon": "font-awesome/fa-terminal",
+        "status": {
+            "x": 320,
+            "y": 80,
+            "wires": [
+                {
+                    "id": "27acc27c.6b842e",
+                    "port": 0
+                }
+            ]
+        }
+    },
+    {
+        "id": "530a0bac.14fdc4",
+        "type": "function",
+        "z": "e38b208d.4d8fa",
+        "name": "build http request",
+        "func": "msg.url = [msg.cb.url, 'integrationServices/v3/cblr/session', msg.cb.session_id, 'file'].join('/');\n\nmsg.headers = {\n    // The ThreatHunter endpoints use the legacy API key\n    'X-Auth-Token': [msg.cb.lr_api_key, msg.cb.lr_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 610,
+        "y": 140,
+        "wires": [
+            [
+                "bd236c16.8f828"
+            ]
+        ]
+    },
+    {
+        "id": "bd236c16.8f828",
+        "type": "http request",
+        "z": "e38b208d.4d8fa",
+        "name": "",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": false,
+        "url": "",
+        "tls": "",
+        "proxy": "",
+        "authType": "",
+        "x": 830,
+        "y": 140,
+        "wires": [
+            [
+                "38ce0dae.956c42"
+            ]
+        ]
+    },
+    {
+        "id": "38ce0dae.956c42",
+        "type": "switch",
+        "z": "e38b208d.4d8fa",
+        "name": "status code",
+        "property": "statusCode",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "200",
+                "vt": "num"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 1030,
+        "y": 140,
+        "wires": [
+            [
+                "b27a3045.adeed"
+            ],
+            [
+                "ad03d9cb.c617b8"
+            ]
+        ]
+    },
+    {
+        "id": "70747deb.c248d4",
+        "type": "function",
+        "z": "e38b208d.4d8fa",
+        "name": "set status",
+        "func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n    return;\n}\n\nnode.status({\n    fill: 'grey',\n    text: 'finding events...'\n});\n\nmsg.delay = msg.cb.delay;\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 240,
+        "y": 140,
+        "wires": [
+            [
+                "b7668ed4.6b223"
+            ]
+        ]
+    },
+    {
+        "id": "ad03d9cb.c617b8",
+        "type": "function",
+        "z": "e38b208d.4d8fa",
+        "name": "set status",
+        "func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1240,
+        "y": 180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "b7668ed4.6b223",
+        "type": "delay",
+        "z": "e38b208d.4d8fa",
+        "name": "delay",
+        "pauseType": "delayv",
+        "timeout": "1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "x": 410,
+        "y": 140,
+        "wires": [
+            [
+                "530a0bac.14fdc4"
+            ]
+        ]
+    },
+    {
+        "id": "27acc27c.6b842e",
+        "type": "status",
+        "z": "e38b208d.4d8fa",
+        "name": "",
+        "scope": [
+            "70747deb.c248d4",
+            "ad03d9cb.c617b8",
+            "b27a3045.adeed"
+        ],
+        "x": 200,
+        "y": 80,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "b27a3045.adeed",
+        "type": "function",
+        "z": "e38b208d.4d8fa",
+        "name": "set status",
+        "func": "node.status({\n    fill: 'green',\n    text: 'found process'\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1240,
+        "y": 100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "6d3989dd.e46c48",
+        "type": "tab",
+        "label": "VMware Carbon Black Cloud Live Response",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "2839c93b.20fdb6",
+        "type": "subflow:e38b208d.4d8fa",
+        "z": "6d3989dd.e46c48",
+        "name": "",
+        "x": 230,
+        "y": 140,
+        "wires": [
+            [],
+            []
+        ]
+    },
+    {
+        "id": "d080092b.305678",
+        "type": "subflow:f3a2d7d6.1e92d8",
+        "z": "6d3989dd.e46c48",
+        "name": "",
+        "x": 240,
+        "y": 180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "2084d3b1.5a5abc",
+        "type": "subflow:842f24dd.ba7438",
+        "z": "6d3989dd.e46c48",
+        "name": "",
+        "x": 220,
+        "y": 240,
+        "wires": [
+            [],
+            [],
+            []
+        ]
+    },
+    {
+        "id": "e53d982a.8d37d8",
+        "type": "subflow:f47e209d.f96e9",
+        "z": "6d3989dd.e46c48",
+        "name": "",
+        "x": 220,
+        "y": 300,
+        "wires": [
+            [],
+            []
+        ]
+    },
+    {
+        "id": "bbc350fd.392fb",
+        "type": "subflow:da49621.33bbaa",
+        "z": "6d3989dd.e46c48",
+        "name": "",
+        "x": 230,
+        "y": 340,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "ee2eaf61.b2631",
+        "type": "subflow:47e11a7e.ef2424",
+        "z": "6d3989dd.e46c48",
+        "name": "",
+        "x": 230,
+        "y": 400,
+        "wires": [
+            [],
+            [],
+            []
+        ]
+    },
+    {
+        "id": "bf8025d5.1c60d8",
+        "type": "subflow:48d77de7.0711a4",
+        "z": "6d3989dd.e46c48",
+        "name": "",
+        "x": 210,
+        "y": 460,
+        "wires": [
+            [],
+            []
+        ]
+    },
+    {
+        "id": "a2680de7.eaf74",
+        "type": "subflow:49195052.02eab",
+        "z": "6d3989dd.e46c48",
+        "name": "",
+        "env": [],
+        "x": 220,
+        "y": 500,
+        "wires": [
+            [],
+            []
+        ]
+    }
+]
