@@ -1,2435 +1,3040 @@
-[{
-	"id": "bd6025d0.7f0518",
-	"type": "subflow",
-	"name": "get-enriched-events-facet-results",
-	"info": "Retrieves the process facet results for a given `job_id`.\n\n`msg.payload` should be a valid `job_id`.\n\n### RBAC Permissions Required\n\n|Permission (.notation name)\t|Operation(s)|\n|---|---|\n|threathunter.events\t|READ|\n\n[See the Documentation](https://developer.carbonblack.com/reference/carbon-black-cloud/cb-threathunter/latest/process-search-v2/#get-enriched-events-facet-results)",
-	"category": "CBC Ent EDR",
-	"in": [{
-		"x": 80,
-		"y": 140,
-		"wires": [{
-			"id": "9ee511f3.9b6f2"
-		}]
-	}],
-	"out": [{
-		"x": 1320,
-		"y": 100,
-		"wires": [{
-			"id": "c974ee08.4cf47",
-			"port": 0
-		}]
-	}, {
-		"x": 1320,
-		"y": 180,
-		"wires": [{
-			"id": "e93d38a3.055f18",
-			"port": 0
-		}]
-	}],
-	"env": [],
-	"color": "#6eb43d",
-	"status": {
-		"x": 320,
-		"y": 80,
-		"wires": [{
-			"id": "b98ad4af.99c6b8",
-			"port": 0
-		}]
-	}
-}, {
-	"id": "672334ce.25c98c",
-	"type": "http request",
-	"z": "bd6025d0.7f0518",
-	"name": "",
-	"method": "GET",
-	"ret": "obj",
-	"paytoqs": false,
-	"url": "",
-	"tls": "",
-	"persist": false,
-	"proxy": "",
-	"authType": "",
-	"x": 790,
-	"y": 140,
-	"wires": [
-		["73dd4955.45eb28"]
-	]
-}, {
-	"id": "bea2f54e.178b78",
-	"type": "function",
-	"z": "bd6025d0.7f0518",
-	"name": "get search results",
-	"func": "msg.url = [msg.cb.url, 'api/investigate/v2/orgs', msg.cb.org_key, 'enriched_events/facet_jobs', msg.payload, 'results'].join('/');\n\nmsg.headers = {\n    // The ThreatHunter endpoints use the legacy API key\n    'X-Auth-Token': [msg.cb.custom_api_key, msg.cb.custom_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 590,
-	"y": 140,
-	"wires": [
-		["672334ce.25c98c"]
-	]
-}, {
-	"id": "73dd4955.45eb28",
-	"type": "switch",
-	"z": "bd6025d0.7f0518",
-	"name": "statusCode",
-	"property": "statusCode",
-	"propertyType": "msg",
-	"rules": [{
-		"t": "eq",
-		"v": "200",
-		"vt": "num"
-	}, {
-		"t": "else"
-	}],
-	"checkall": "true",
-	"repair": false,
-	"outputs": 2,
-	"x": 970,
-	"y": 140,
-	"wires": [
-		["c974ee08.4cf47"],
-		["e93d38a3.055f18"]
-	]
-}, {
-	"id": "c974ee08.4cf47",
-	"type": "function",
-	"z": "bd6025d0.7f0518",
-	"name": "search complete?",
-	"func": "if (msg.payload.contacted !== msg.payload.completed) {\n    msg.payload.job_id = msg.temp.job_id;\n    \n    node.status({\n        text: 'Search not finished. Found ' + msg.payload.num_found + ' results',\n        fill: 'yellow'\n    });\n    \n} else {\n    \n    node.status({\n        text: 'Search finished. Found ' + msg.payload.num_found + ' results',\n        fill: 'green'\n    });\n}\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1170,
-	"y": 100,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "e93d38a3.055f18",
-	"type": "function",
-	"z": "bd6025d0.7f0518",
-	"name": "return error",
-	"func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1150,
-	"y": 180,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "9ee511f3.9b6f2",
-	"type": "function",
-	"z": "bd6025d0.7f0518",
-	"name": "set status",
-	"func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n    return;\n}\n\nelse {\n    node.status({\n        fill: 'grey',\n        text: 'starting enriched events facet search...'\n    });\n}\n\nmsg.delay = msg.cb.delay || 1;\n\nif (!msg.temp) {\n    msg.temp = {};\n}\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 220,
-	"y": 140,
-	"wires": [
-		["7161320e.00dfec"]
-	]
-}, {
-	"id": "7161320e.00dfec",
-	"type": "delay",
-	"z": "bd6025d0.7f0518",
-	"name": "",
-	"pauseType": "delayv",
-	"timeout": "1",
-	"timeoutUnits": "seconds",
-	"rate": "1",
-	"nbRateUnits": "1",
-	"rateUnits": "second",
-	"randomFirst": "1",
-	"randomLast": "5",
-	"randomUnits": "seconds",
-	"drop": false,
-	"x": 390,
-	"y": 140,
-	"wires": [
-		["bea2f54e.178b78"]
-	]
-}, {
-	"id": "b98ad4af.99c6b8",
-	"type": "status",
-	"z": "bd6025d0.7f0518",
-	"name": "",
-	"scope": ["c974ee08.4cf47", "e93d38a3.055f18", "9ee511f3.9b6f2"],
-	"x": 200,
-	"y": 80,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "88719de.3eb786",
-	"type": "subflow",
-	"name": "enriched-events-facet-search",
-	"info": "Creates an enriched events facet job. The results for the facet job may be requested using the job ID returned. This route will not request processes.\n\n### RBAC Permissions Required\n\n|Permission (.notation name)\t|Operation(s)|\n|---|---|\n|threathunter.events\t|READ|\n\nExample `msg.payload`:\n\n    {\n        \"query\": \"(event_id:4b792e9f8e4211ea9ea33516be44bafd)\",\n        \"terms\": {\n            \"fields\": [\n                \"event_type\",\n                \"process_name\",\n                \"process_effective_reputation\",\n                \"process_hash\",\n                \"device_name\",\n                \"process_username\",\n                \"parent_effective_reputation\",\n                \"ttp\",\n                \"netconn_location\"\n            ],\n            \"rows\": 50,\n            \"time_range\": {\n                \"start\": \"2020-05-01T14:48:03-07:00\"\n            },\n            \"start\": \"2020-05-01T14:48:03-07:00\"\n        }\n    }\n    \n[See the Documentation](https://developer.carbonblack.com/reference/carbon-black-cloud/cb-threathunter/latest/process-search-v2/#start-enriched-events-facet-job)\n",
-	"category": "CBC Ent EDR",
-	"in": [{
-		"x": 120,
-		"y": 300,
-		"wires": [{
-			"id": "ff08df63.cbf"
-		}]
-	}],
-	"out": [{
-		"x": 1360,
-		"y": 260,
-		"wires": [{
-			"id": "7f6ada83.f14b84",
-			"port": 0
-		}]
-	}, {
-		"x": 1360,
-		"y": 320,
-		"wires": [{
-			"id": "7e8f98c7.0328a8",
-			"port": 0
-		}]
-	}],
-	"env": [],
-	"color": "#6eb43d",
-	"outputLabels": ["job_id", "error"],
-	"status": {
-		"x": 340,
-		"y": 240,
-		"wires": [{
-			"id": "4ac909fe.f49be8",
-			"port": 0
-		}]
-	}
-}, {
-	"id": "ff08df63.cbf",
-	"type": "function",
-	"z": "88719de.3eb786",
-	"name": "set status",
-	"func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n    return;\n}\n\nelse {\n    node.status({\n        fill: 'grey',\n        text: 'starting enriched events facet search...'\n    });\n}\n\nmsg.delay = msg.cb.delay || 1;\n\nif (!msg.temp) {\n    msg.temp = {};\n}\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 240,
-	"y": 300,
-	"wires": [
-		["4ade3e19.f573e"]
-	]
-}, {
-	"id": "4ade3e19.f573e",
-	"type": "delay",
-	"z": "88719de.3eb786",
-	"name": "",
-	"pauseType": "delayv",
-	"timeout": "1",
-	"timeoutUnits": "seconds",
-	"rate": "1",
-	"nbRateUnits": "1",
-	"rateUnits": "second",
-	"randomFirst": "1",
-	"randomLast": "5",
-	"randomUnits": "seconds",
-	"drop": false,
-	"x": 410,
-	"y": 300,
-	"wires": [
-		["1da1b23c.4f69ce"]
-	]
-}, {
-	"id": "4ac909fe.f49be8",
-	"type": "status",
-	"z": "88719de.3eb786",
-	"name": "",
-	"scope": ["ff08df63.cbf", "7e8f98c7.0328a8", "7f6ada83.f14b84"],
-	"x": 220,
-	"y": 240,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "1da1b23c.4f69ce",
-	"type": "function",
-	"z": "88719de.3eb786",
-	"name": "Start a Event Search Job",
-	"func": "msg.url = [msg.cb.url, 'api/investigate/v2/orgs', msg.cb.org_key, 'enriched_events/facet_jobs'].join('/');\n\nmsg.headers = {\n    // The ThreatHunter endpoints use the legacy API key\n    'X-Auth-Token': [msg.cb.custom_api_key, msg.cb.custom_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 630,
-	"y": 300,
-	"wires": [
-		["5d924c16.982674"]
-	]
-}, {
-	"id": "5d924c16.982674",
-	"type": "http request",
-	"z": "88719de.3eb786",
-	"name": "",
-	"method": "POST",
-	"ret": "obj",
-	"paytoqs": false,
-	"url": "",
-	"tls": "",
-	"persist": false,
-	"proxy": "",
-	"authType": "",
-	"x": 850,
-	"y": 300,
-	"wires": [
-		["405d0601.9d5338"]
-	]
-}, {
-	"id": "405d0601.9d5338",
-	"type": "switch",
-	"z": "88719de.3eb786",
-	"name": "statusCode",
-	"property": "statusCode",
-	"propertyType": "msg",
-	"rules": [{
-		"t": "eq",
-		"v": "200",
-		"vt": "num"
-	}, {
-		"t": "else"
-	}],
-	"checkall": "true",
-	"repair": false,
-	"outputs": 2,
-	"x": 1030,
-	"y": 300,
-	"wires": [
-		["7f6ada83.f14b84"],
-		["7e8f98c7.0328a8"]
-	]
-}, {
-	"id": "7e8f98c7.0328a8",
-	"type": "function",
-	"z": "88719de.3eb786",
-	"name": "return error",
-	"func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1230,
-	"y": 320,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "7f6ada83.f14b84",
-	"type": "function",
-	"z": "88719de.3eb786",
-	"name": "return job_id",
-	"func": "node.status({\n    fill: 'green',\n    text: 'job_id: ' + msg.payload.job_id\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1230,
-	"y": 260,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "384f9022.55b3a",
-	"type": "subflow",
-	"name": "get-enriched-events-search-results",
-	"info": "",
-	"category": "CBC Ent EDR",
-	"in": [{
-		"x": 120,
-		"y": 140,
-		"wires": [{
-			"id": "3bfd08a7.504d48"
-		}]
-	}],
-	"out": [{
-		"x": 1360,
-		"y": 100,
-		"wires": [{
-			"id": "9f4676f5.356bc8",
-			"port": 0
-		}]
-	}, {
-		"x": 1320,
-		"y": 180,
-		"wires": [{
-			"id": "e21f54fe.522bb8",
-			"port": 0
-		}]
-	}],
-	"env": [],
-	"color": "#6eb43d",
-	"status": {
-		"x": 320,
-		"y": 80,
-		"wires": [{
-			"id": "85b260d7.c91dc",
-			"port": 0
-		}]
-	}
-}, {
-	"id": "e21f54fe.522bb8",
-	"type": "function",
-	"z": "384f9022.55b3a",
-	"name": "return error",
-	"func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1170,
-	"y": 180,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "9d1a47b5.484d98",
-	"type": "function",
-	"z": "384f9022.55b3a",
-	"name": "get search results",
-	"func": "msg.url = [msg.cb.url, 'api/investigate/v2/orgs', msg.cb.org_key, 'enriched_events/search_jobs', msg.payload, 'results'].join('/');\n\nmsg.headers = {\n    // The ThreatHunter endpoints use the legacy API key\n    'X-Auth-Token': [msg.cb.custom_api_key, msg.cb.custom_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 590,
-	"y": 140,
-	"wires": [
-		["afc609a1.d68488"]
-	]
-}, {
-	"id": "afc609a1.d68488",
-	"type": "http request",
-	"z": "384f9022.55b3a",
-	"name": "",
-	"method": "GET",
-	"ret": "obj",
-	"paytoqs": false,
-	"url": "",
-	"tls": "",
-	"persist": false,
-	"proxy": "",
-	"authType": "",
-	"x": 790,
-	"y": 140,
-	"wires": [
-		["4aea54f1.211cec"]
-	]
-}, {
-	"id": "4aea54f1.211cec",
-	"type": "switch",
-	"z": "384f9022.55b3a",
-	"name": "statusCode",
-	"property": "statusCode",
-	"propertyType": "msg",
-	"rules": [{
-		"t": "eq",
-		"v": "200",
-		"vt": "num"
-	}, {
-		"t": "else"
-	}],
-	"checkall": "true",
-	"repair": false,
-	"outputs": 2,
-	"x": 970,
-	"y": 140,
-	"wires": [
-		["9f4676f5.356bc8"],
-		["e21f54fe.522bb8"]
-	]
-}, {
-	"id": "9f4676f5.356bc8",
-	"type": "function",
-	"z": "384f9022.55b3a",
-	"name": "search complete?",
-	"func": "if (msg.payload.contacted !== msg.payload.completed) {\n    node.status({\n        text: 'Search not finished. Found ' + msg.payload.num_found + ' results',\n        fill: 'yellow'\n    });\n} else {\n    node.status({\n        fill: 'green',\n        text: 'Found ' + msg.payload.num_found + ' results'\n    });\n}\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1190,
-	"y": 100,
-	"wires": [
-		[]
-	],
-	"outputLabels": ["yes"]
-}, {
-	"id": "85b260d7.c91dc",
-	"type": "status",
-	"z": "384f9022.55b3a",
-	"name": "",
-	"scope": ["e21f54fe.522bb8", "9f4676f5.356bc8", "3bfd08a7.504d48"],
-	"x": 200,
-	"y": 80,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "3bfd08a7.504d48",
-	"type": "function",
-	"z": "384f9022.55b3a",
-	"name": "set status",
-	"func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n}\n\nelse {\n    node.status({\n        fill: 'grey',\n        text: 'starting process search...'\n    });\n}\n\nmsg.delay = msg.cb.delay || 1;\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 240,
-	"y": 140,
-	"wires": [
-		["13758d5b.61fe73"]
-	]
-}, {
-	"id": "13758d5b.61fe73",
-	"type": "delay",
-	"z": "384f9022.55b3a",
-	"name": "",
-	"pauseType": "delayv",
-	"timeout": "1",
-	"timeoutUnits": "seconds",
-	"rate": "1",
-	"nbRateUnits": "1",
-	"rateUnits": "second",
-	"randomFirst": "1",
-	"randomLast": "5",
-	"randomUnits": "seconds",
-	"drop": false,
-	"x": 390,
-	"y": 140,
-	"wires": [
-		["9d1a47b5.484d98"]
-	]
-}, {
-	"id": "ec94876c.eca868",
-	"type": "subflow",
-	"name": "enriched-events-search-v2",
-	"info": "Sample `msg.payload`\n\n    {\n        \"query\": \"ttp:NETWORK_ACCESS \",\n        \"sort\": [\n            {\n                \"field\": \"device_timestamp\",\n                \"order\": \"asc\"\n            }\n        ],\n        \"fields\": [\n            \"event_time\",\n            \"event_id\",\n            \"event_type\",\n            \"org_id\",\n            \"ttp\",\n            \"device_id\",\n            \"device_internal_ip\",\n            \"device_name\",\n            \"alert_id\",\n            \"process_id\",\n            \"process_name\",\n            \"process_user\",\n            \"process_hash\",\n            \"process_guid\",\n            \"netconn_protocol\",\n            \"netconn_remote_ipv4\",\n            \"netconn_remote_ipv6\",\n            \"netconn_remote_port\",\n            \"netconn_local_ipv4\",\n            \"netconn_local_ipv6\",\n            \"netconn_local_port\",\n            \"netconn_domain\",\n            \"netconn_inbound\",\n            \"netconn_location\",\n            \"netconn_action\"\n        ],\n        \"start\": 0,\n        \"time_range\": {\n            \"end\": \"2020-04-21T00:00:00Z\",\n            \"start\": \"2020-04-19T00:00:00Z\"\n        }\n    }\n    \n[See the Documentation](https://developer.carbonblack.com/reference/carbon-black-cloud/cb-threathunter/latest/process-search-v2/#start-an-enriched-events-search-job)  ",
-	"category": "CBC Ent EDR",
-	"in": [{
-		"x": 120,
-		"y": 140,
-		"wires": [{
-			"id": "a6086483.2e9068"
-		}]
-	}],
-	"out": [{
-		"x": 1300,
-		"y": 100,
-		"wires": [{
-			"id": "b8f2e173.f7cf2",
-			"port": 0
-		}]
-	}, {
-		"x": 1300,
-		"y": 180,
-		"wires": [{
-			"id": "ad4928fa.3392d8",
-			"port": 0
-		}]
-	}],
-	"env": [],
-	"color": "#6eb43d",
-	"outputLabels": ["job_id", "results"],
-	"status": {
-		"x": 320,
-		"y": 80,
-		"wires": [{
-			"id": "79cad3f1.fd593c",
-			"port": 0
-		}]
-	}
-}, {
-	"id": "a6086483.2e9068",
-	"type": "function",
-	"z": "ec94876c.eca868",
-	"name": "set status",
-	"func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n}\n\nelse {\n    node.status({\n        fill: 'grey',\n        text: 'starting process search...'\n    });\n}\n\nmsg.delay = msg.cb.delay || 1;\n\nif (!msg.temp) {\n    msg.temp = {};\n}\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 240,
-	"y": 140,
-	"wires": [
-		["ba22d24f.3833c"]
-	]
-}, {
-	"id": "ba22d24f.3833c",
-	"type": "delay",
-	"z": "ec94876c.eca868",
-	"name": "",
-	"pauseType": "delayv",
-	"timeout": "1",
-	"timeoutUnits": "seconds",
-	"rate": "1",
-	"nbRateUnits": "1",
-	"rateUnits": "second",
-	"randomFirst": "1",
-	"randomLast": "5",
-	"randomUnits": "seconds",
-	"drop": false,
-	"x": 390,
-	"y": 140,
-	"wires": [
-		["28a51cdc.7b7b74"]
-	]
-}, {
-	"id": "79cad3f1.fd593c",
-	"type": "status",
-	"z": "ec94876c.eca868",
-	"name": "",
-	"scope": ["a6086483.2e9068", "ad4928fa.3392d8", "b8f2e173.f7cf2"],
-	"x": 200,
-	"y": 80,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "28a51cdc.7b7b74",
-	"type": "function",
-	"z": "ec94876c.eca868",
-	"name": "Start a Event Search Job",
-	"func": "msg.url = [msg.cb.url, 'api/investigate/v2/orgs', msg.cb.org_key, 'enriched_events/search_jobs'].join('/');\n\nmsg.headers = {\n    // The ThreatHunter endpoints use the legacy API key\n    'X-Auth-Token': [msg.cb.custom_api_key, msg.cb.custom_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 590,
-	"y": 140,
-	"wires": [
-		["c5fb81d5.7e84d"]
-	]
-}, {
-	"id": "c5fb81d5.7e84d",
-	"type": "http request",
-	"z": "ec94876c.eca868",
-	"name": "",
-	"method": "POST",
-	"ret": "obj",
-	"paytoqs": false,
-	"url": "",
-	"tls": "",
-	"persist": false,
-	"proxy": "",
-	"authType": "",
-	"x": 810,
-	"y": 140,
-	"wires": [
-		["1442aff3.24461"]
-	]
-}, {
-	"id": "1442aff3.24461",
-	"type": "switch",
-	"z": "ec94876c.eca868",
-	"name": "",
-	"property": "statusCode",
-	"propertyType": "msg",
-	"rules": [{
-		"t": "eq",
-		"v": "200",
-		"vt": "num"
-	}, {
-		"t": "else"
-	}],
-	"checkall": "true",
-	"repair": false,
-	"outputs": 2,
-	"x": 970,
-	"y": 140,
-	"wires": [
-		["b8f2e173.f7cf2"],
-		["ad4928fa.3392d8"]
-	]
-}, {
-	"id": "ad4928fa.3392d8",
-	"type": "function",
-	"z": "ec94876c.eca868",
-	"name": "return error",
-	"func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1150,
-	"y": 180,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "b8f2e173.f7cf2",
-	"type": "function",
-	"z": "ec94876c.eca868",
-	"name": "return job_id",
-	"func": "node.status({\n    fill: 'green',\n    text: 'submitted query'\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1150,
-	"y": 100,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "3b190132.4275ae",
-	"type": "subflow",
-	"name": "get-process-search-results",
-	"info": "Retrieves the process search results for a given job ID. Results will be sorted based on the sort parameter used when starting the search.\n\n### RBAC Permissions Required\n\n|Permission (.notation name)\t|Operation(s)|\n|---|---|\n|threathunter.events\t|READ|\n\n`msg.payload` should be a string of the `job_id` for which to get the results.\n\n[See the Documentation](https://developer.carbonblack.com/reference/carbon-black-cloud/cb-threathunter/latest/process-search-v2/#get-process-search-results)",
-	"category": "CBC Ent EDR",
-	"in": [{
-		"x": 100,
-		"y": 140,
-		"wires": [{
-			"id": "f3e279d5.c3bcb8"
-		}]
-	}],
-	"out": [{
-		"x": 1420,
-		"y": 100,
-		"wires": [{
-			"id": "76beca24.b2bf24",
-			"port": 0
-		}]
-	}, {
-		"x": 1420,
-		"y": 180,
-		"wires": [{
-			"id": "db047874.a54588",
-			"port": 0
-		}]
-	}],
-	"env": [],
-	"color": "#6eb43d",
-	"status": {
-		"x": 320,
-		"y": 80,
-		"wires": [{
-			"id": "de887ca0.acc9c",
-			"port": 0
-		}]
-	}
-}, {
-	"id": "ac46c94d.d99838",
-	"type": "http request",
-	"z": "3b190132.4275ae",
-	"name": "",
-	"method": "GET",
-	"ret": "obj",
-	"paytoqs": false,
-	"url": "",
-	"tls": "",
-	"persist": false,
-	"proxy": "",
-	"authType": "",
-	"x": 870,
-	"y": 140,
-	"wires": [
-		["b4b70b9.5689af8"]
-	]
-}, {
-	"id": "7cb052a.e4cc8ac",
-	"type": "function",
-	"z": "3b190132.4275ae",
-	"name": "Get Process Search Results",
-	"func": "node.status({\n    text: 'searching...',\n    fill: 'grey'\n});\n\nmsg.url = [msg.cb.url, 'api/investigate/v2/orgs', msg.cb.org_key, 'processes/search_jobs', msg.payload, 'results'].join('/');\n\nmsg.headers = {\n    // The ThreatHunter endpoints use the legacy API key\n    'X-Auth-Token': [msg.cb.custom_api_key, msg.cb.custom_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 640,
-	"y": 140,
-	"wires": [
-		["ac46c94d.d99838"]
-	]
-}, {
-	"id": "b4b70b9.5689af8",
-	"type": "switch",
-	"z": "3b190132.4275ae",
-	"name": "statusCode",
-	"property": "statusCode",
-	"propertyType": "msg",
-	"rules": [{
-		"t": "eq",
-		"v": "200",
-		"vt": "num"
-	}, {
-		"t": "else"
-	}],
-	"checkall": "true",
-	"repair": false,
-	"outputs": 2,
-	"x": 1070,
-	"y": 140,
-	"wires": [
-		["76beca24.b2bf24"],
-		["db047874.a54588"]
-	]
-}, {
-	"id": "76beca24.b2bf24",
-	"type": "function",
-	"z": "3b190132.4275ae",
-	"name": "search finished?",
-	"func": "if (msg.payload.contacted == msg.payload.completed) {\n    node.status({\n        text: 'Search finished. Found ' + msg.payload.num_found + ' results',\n        fill: 'green'\n    });\n} else {\n    node.status({\n        text: 'Search not finished. Found ' + msg.payload.num_found + ' results',\n        fill: 'yellow'\n    });\n}\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1280,
-	"y": 100,
-	"wires": [
-		[]
-	],
-	"outputLabels": ["yes"]
-}, {
-	"id": "db047874.a54588",
-	"type": "function",
-	"z": "3b190132.4275ae",
-	"name": "return error",
-	"func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1270,
-	"y": 180,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "f3e279d5.c3bcb8",
-	"type": "function",
-	"z": "3b190132.4275ae",
-	"name": "set status",
-	"func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n}\n\nelse {\n    node.status({\n        fill: 'grey',\n        text: 'starting process search...'\n    });\n}\n\nmsg.delay = msg.cb.delay || 1;\n\nmsg.cb.temp = {};\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 240,
-	"y": 140,
-	"wires": [
-		["7d2feb2d.1ac804"]
-	]
-}, {
-	"id": "7d2feb2d.1ac804",
-	"type": "delay",
-	"z": "3b190132.4275ae",
-	"name": "",
-	"pauseType": "delayv",
-	"timeout": "1",
-	"timeoutUnits": "seconds",
-	"rate": "1",
-	"nbRateUnits": "1",
-	"rateUnits": "second",
-	"randomFirst": "1",
-	"randomLast": "5",
-	"randomUnits": "seconds",
-	"drop": false,
-	"x": 400,
-	"y": 140,
-	"wires": [
-		["7cb052a.e4cc8ac"]
-	]
-}, {
-	"id": "de887ca0.acc9c",
-	"type": "status",
-	"z": "3b190132.4275ae",
-	"name": "",
-	"scope": ["76beca24.b2bf24", "db047874.a54588", "f3e279d5.c3bcb8"],
-	"x": 200,
-	"y": 80,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "ba4e84d0.27ae58",
-	"type": "subflow",
-	"name": "start-process-search-job",
-	"info": "Creates a process search job. The results for the search job may be requested using the job ID returned. This route will not request facets.\n\nUse **get-process-search-results** to get the results.\n\n### RBAC Permissions Required\n\n|Permission (.notation name)\t|Operation(s)|\n|---|---|\n|threathunter.events\t|CREATE|\n\n> **Note:** See the [Process Search Fields](https://developer.carbonblack.com/reference/carbon-black-cloud/cb-threathunter/latest/process-search-fields/#process-search-fields) for details on how to populate the search query.\n\nSample `msg.payload`\n\n    {\n        \"query\": \"(event_id:c65ca5e15e4b11ea91710b30c57763c8)\",\n        \"time_range\": {\n            \"start\": \"2020-03-04T19:10:21.448Z\"\n        },\n        \"rows\": 10000,\n        \"fields\": [\n            \"*\",\n            \"document_guid\"\n        ],\n        \"sort\": [\n            {\n                \"field\": \"device_timestamp\",\n                \"order\": \"DESC\"\n            }\n        ]\n    }\n    \n[See the Documentation](https://developer.carbonblack.com/reference/carbon-black-cloud/cb-threathunter/latest/process-search-v2/#start-a-process-search-job)\n\n",
-	"category": "CBC Ent EDR",
-	"in": [{
-		"x": 120,
-		"y": 140,
-		"wires": [{
-			"id": "c27ca1cc.a5993"
-		}]
-	}],
-	"out": [{
-		"x": 1380,
-		"y": 120,
-		"wires": [{
-			"id": "f91bb4cd.877ac8",
-			"port": 0
-		}]
-	}, {
-		"x": 1380,
-		"y": 180,
-		"wires": [{
-			"id": "90e7a5d1.e17fc8",
-			"port": 0
-		}]
-	}],
-	"env": [],
-	"color": "#6eb43d",
-	"outputLabels": ["job_id", "incomplete search"],
-	"status": {
-		"x": 340,
-		"y": 80,
-		"wires": [{
-			"id": "6688779.bb97788",
-			"port": 0
-		}]
-	}
-}, {
-	"id": "2fe150a9.a24df",
-	"type": "function",
-	"z": "ba4e84d0.27ae58",
-	"name": "Start a Process Search Job",
-	"func": "msg.url = [msg.cb.url, 'api/investigate/v2/orgs', msg.cb.org_key, 'processes/search_jobs'].join('/');\n\nmsg.headers = {\n    // The ThreatHunter endpoints use the legacy API key\n    'X-Auth-Token': [msg.cb.custom_api_key, msg.cb.custom_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 640,
-	"y": 140,
-	"wires": [
-		["f8707d9c.22493"]
-	]
-}, {
-	"id": "f8707d9c.22493",
-	"type": "http request",
-	"z": "ba4e84d0.27ae58",
-	"name": "",
-	"method": "POST",
-	"ret": "obj",
-	"paytoqs": false,
-	"url": "",
-	"tls": "",
-	"proxy": "",
-	"authType": "",
-	"x": 890,
-	"y": 140,
-	"wires": [
-		["ba220bb8.b7cd28"]
-	]
-}, {
-	"id": "ba220bb8.b7cd28",
-	"type": "switch",
-	"z": "ba4e84d0.27ae58",
-	"name": "",
-	"property": "statusCode",
-	"propertyType": "msg",
-	"rules": [{
-		"t": "eq",
-		"v": "200",
-		"vt": "num"
-	}, {
-		"t": "else"
-	}],
-	"checkall": "true",
-	"repair": false,
-	"outputs": 2,
-	"x": 1050,
-	"y": 140,
-	"wires": [
-		["f91bb4cd.877ac8"],
-		["90e7a5d1.e17fc8"]
-	]
-}, {
-	"id": "c27ca1cc.a5993",
-	"type": "function",
-	"z": "ba4e84d0.27ae58",
-	"name": "set status",
-	"func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n}\n\nelse {\n    node.status({\n        fill: 'grey',\n        text: 'starting process search...'\n    });\n}\n\nmsg.delay = msg.cb.delay || 1;\n\nmsg.cb.temp = {};\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 240,
-	"y": 140,
-	"wires": [
-		["5fd0313.9a3dbd"]
-	]
-}, {
-	"id": "90e7a5d1.e17fc8",
-	"type": "function",
-	"z": "ba4e84d0.27ae58",
-	"name": "return error",
-	"func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1230,
-	"y": 180,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "5fd0313.9a3dbd",
-	"type": "delay",
-	"z": "ba4e84d0.27ae58",
-	"name": "",
-	"pauseType": "delayv",
-	"timeout": "1",
-	"timeoutUnits": "seconds",
-	"rate": "1",
-	"nbRateUnits": "1",
-	"rateUnits": "second",
-	"randomFirst": "1",
-	"randomLast": "5",
-	"randomUnits": "seconds",
-	"drop": false,
-	"x": 400,
-	"y": 140,
-	"wires": [
-		["2fe150a9.a24df"]
-	]
-}, {
-	"id": "6688779.bb97788",
-	"type": "status",
-	"z": "ba4e84d0.27ae58",
-	"name": "",
-	"scope": ["c27ca1cc.a5993", "90e7a5d1.e17fc8", "7cb052a.e4cc8ac", "f91bb4cd.877ac8", "76beca24.b2bf24"],
-	"x": 200,
-	"y": 80,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "f91bb4cd.877ac8",
-	"type": "function",
-	"z": "ba4e84d0.27ae58",
-	"name": "return job_id",
-	"func": "node.status({\n    fill: 'green',\n    text: 'job_id: ' + msg.payload.job_id\n});\n        \nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1230,
-	"y": 120,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "6e754fbf.28f2a",
-	"type": "subflow",
-	"name": "ubs-retrieve-metadata",
-	"info": "This data is specific to the binary and is not a function of organization data. Retrieve Metadata for a Binary This API returns all of the metadata for the specified binary identified by the SHA-256 hash.\n\n`msg.payload` should be a SHA256 string.\n\nOutput `msg.payload` will be an object of the file summary if one was found.\n\n---\n\n[See the Documentation](https://developer.carbonblack.com/reference/cb-threathunter/latest/universal-binary-store-api/#retrieve-metadata)",
-	"category": "CBC Ent EDR",
-	"in": [{
-		"x": 120,
-		"y": 140,
-		"wires": [{
-			"id": "5bdd341c.ef47dc"
-		}]
-	}],
-	"out": [{
-		"x": 1440,
-		"y": 100,
-		"wires": [{
-			"id": "b4d67898.ef1eb8",
-			"port": 0
-		}]
-	}, {
-		"x": 1440,
-		"y": 180,
-		"wires": [{
-			"id": "3a08e1a4.ce217e",
-			"port": 0
-		}]
-	}],
-	"env": [],
-	"color": "#6eb43d",
-	"icon": "node-red/file.svg",
-	"status": {
-		"x": 320,
-		"y": 80,
-		"wires": [{
-			"id": "76b59785.a7d5e8",
-			"port": 0
-		}]
-	}
-}, {
-	"id": "19d237a0.0c3db8",
-	"type": "function",
-	"z": "6e754fbf.28f2a",
-	"name": "build http request",
-	"func": "msg.url = [msg.cb.url, 'ubs/v1/orgs', msg.cb.org_key, 'sha256', msg.payload, 'metadata'].join('/');\n\nmsg.headers = {\n    'X-Auth-Token': [msg.cb.custom_api_key, msg.cb.custom_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 610,
-	"y": 140,
-	"wires": [
-		["e62938df.d36268"]
-	]
-}, {
-	"id": "e62938df.d36268",
-	"type": "http request",
-	"z": "6e754fbf.28f2a",
-	"name": "get process summary",
-	"method": "GET",
-	"ret": "obj",
-	"paytoqs": false,
-	"url": "",
-	"tls": "",
-	"proxy": "",
-	"authType": "",
-	"x": 860,
-	"y": 140,
-	"wires": [
-		["b3d1b498.a1b678"]
-	]
-}, {
-	"id": "b3d1b498.a1b678",
-	"type": "switch",
-	"z": "6e754fbf.28f2a",
-	"name": "status code",
-	"property": "statusCode",
-	"propertyType": "msg",
-	"rules": [{
-		"t": "eq",
-		"v": "200",
-		"vt": "num"
-	}, {
-		"t": "else"
-	}],
-	"checkall": "true",
-	"repair": false,
-	"outputs": 2,
-	"x": 1070,
-	"y": 140,
-	"wires": [
-		["b4d67898.ef1eb8"],
-		["3a08e1a4.ce217e"]
-	]
-}, {
-	"id": "5bdd341c.ef47dc",
-	"type": "function",
-	"z": "6e754fbf.28f2a",
-	"name": "set status",
-	"func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n    return;\n}\n\nnode.status({\n    fill: 'grey',\n    text: 'getting metadata...'\n});\n\nmsg.delay = msg.cb.delay;\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 240,
-	"y": 140,
-	"wires": [
-		["8e3269e0.40e698"]
-	]
-}, {
-	"id": "3a08e1a4.ce217e",
-	"type": "function",
-	"z": "6e754fbf.28f2a",
-	"name": "set status",
-	"func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1280,
-	"y": 180,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "8e3269e0.40e698",
-	"type": "delay",
-	"z": "6e754fbf.28f2a",
-	"name": "delay",
-	"pauseType": "delayv",
-	"timeout": "1",
-	"timeoutUnits": "seconds",
-	"rate": "1",
-	"nbRateUnits": "1",
-	"rateUnits": "second",
-	"randomFirst": "1",
-	"randomLast": "5",
-	"randomUnits": "seconds",
-	"drop": false,
-	"x": 410,
-	"y": 140,
-	"wires": [
-		["19d237a0.0c3db8"]
-	]
-}, {
-	"id": "76b59785.a7d5e8",
-	"type": "status",
-	"z": "6e754fbf.28f2a",
-	"name": "",
-	"scope": ["5bdd341c.ef47dc", "3a08e1a4.ce217e", "b4d67898.ef1eb8"],
-	"x": 200,
-	"y": 80,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "b4d67898.ef1eb8",
-	"type": "function",
-	"z": "6e754fbf.28f2a",
-	"name": "set status",
-	"func": "node.status({\n    fill: 'green',\n    text: 'pulled metadata'\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1280,
-	"y": 100,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "b746de58.ad643",
-	"type": "subflow",
-	"name": "ubs-download-file",
-	"info": "This API provides a means to download files. The files are able to be downloaded via AWS S3 pre-signed URLs. The URLs enables the client to perform a GET on the provided URLs and download the files. The links will automatically expire after one hour, unless a different expiration time is requested.\n\n> **CAUTION** - Anyone who has these links will be able to download the files until the requested expiration time (default one hour after the request). Ensure that care is taken when utilizing this API.\n\nSample `msg.payload`:\n\n    {\n        \"sha256\": [\"SHA256HERE\"],\n        \"expiration_seconds\": 300\n    }\n\n---\n\n[See the Documentation](https://developer.carbonblack.com/reference/cb-threathunter/latest/universal-binary-store-api/#download)",
-	"category": "CBC Ent EDR",
-	"in": [{
-		"x": 100,
-		"y": 140,
-		"wires": [{
-			"id": "681af9ca.def608"
-		}]
-	}],
-	"out": [{
-		"x": 1440,
-		"y": 100,
-		"wires": [{
-			"id": "90278e6a.9de5e",
-			"port": 0
-		}]
-	}, {
-		"x": 1440,
-		"y": 180,
-		"wires": [{
-			"id": "20d71271.87e76e",
-			"port": 0
-		}]
-	}],
-	"env": [],
-	"color": "#6eb43d",
-	"icon": "node-red/file.svg",
-	"status": {
-		"x": 320,
-		"y": 80,
-		"wires": [{
-			"id": "4666d50c.88eccc",
-			"port": 0
-		}]
-	}
-}, {
-	"id": "ddef2339.2d6d9",
-	"type": "function",
-	"z": "b746de58.ad643",
-	"name": "build http request",
-	"func": "msg.url = [msg.cb.url, 'ubs/v1/orgs', msg.cb.org_key, 'file/_download'].join('/');\n\nmsg.headers = {\n    'X-Auth-Token': [msg.cb.custom_api_key, msg.cb.custom_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 610,
-	"y": 140,
-	"wires": [
-		["fda08f69.ebb2"]
-	]
-}, {
-	"id": "fda08f69.ebb2",
-	"type": "http request",
-	"z": "b746de58.ad643",
-	"name": "get process summary",
-	"method": "POST",
-	"ret": "obj",
-	"paytoqs": false,
-	"url": "",
-	"tls": "",
-	"proxy": "",
-	"authType": "",
-	"x": 860,
-	"y": 140,
-	"wires": [
-		["7099b8a2.3b7018"]
-	]
-}, {
-	"id": "7099b8a2.3b7018",
-	"type": "switch",
-	"z": "b746de58.ad643",
-	"name": "status code",
-	"property": "statusCode",
-	"propertyType": "msg",
-	"rules": [{
-		"t": "eq",
-		"v": "200",
-		"vt": "num"
-	}, {
-		"t": "else"
-	}],
-	"checkall": "true",
-	"repair": false,
-	"outputs": 2,
-	"x": 1070,
-	"y": 140,
-	"wires": [
-		["90278e6a.9de5e"],
-		["20d71271.87e76e"]
-	]
-}, {
-	"id": "681af9ca.def608",
-	"type": "function",
-	"z": "b746de58.ad643",
-	"name": "set status",
-	"func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n    return;\n}\n\nnode.status({\n    fill: 'grey',\n    text: 'downloading file...'\n});\n\nmsg.delay = msg.cb.delay;\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 240,
-	"y": 140,
-	"wires": [
-		["e3560f57.542af"]
-	]
-}, {
-	"id": "20d71271.87e76e",
-	"type": "function",
-	"z": "b746de58.ad643",
-	"name": "set status",
-	"func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1280,
-	"y": 180,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "e3560f57.542af",
-	"type": "delay",
-	"z": "b746de58.ad643",
-	"name": "delay",
-	"pauseType": "delayv",
-	"timeout": "1",
-	"timeoutUnits": "seconds",
-	"rate": "1",
-	"nbRateUnits": "1",
-	"rateUnits": "second",
-	"randomFirst": "1",
-	"randomLast": "5",
-	"randomUnits": "seconds",
-	"drop": false,
-	"x": 410,
-	"y": 140,
-	"wires": [
-		["ddef2339.2d6d9"]
-	]
-}, {
-	"id": "4666d50c.88eccc",
-	"type": "status",
-	"z": "b746de58.ad643",
-	"name": "",
-	"scope": ["681af9ca.def608", "20d71271.87e76e", "90278e6a.9de5e"],
-	"x": 200,
-	"y": 80,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "90278e6a.9de5e",
-	"type": "function",
-	"z": "b746de58.ad643",
-	"name": "set status",
-	"func": "node.status({\n    fill: 'green',\n    text: 'download ready'\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1280,
-	"y": 100,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "b4879a8e.249268",
-	"type": "subflow",
-	"name": "ubs-file-path-input",
-	"info": "`msg.payload` is expected to be a string of a sha256.\n\nOptionally you can provide `msg.params` with the number of `rows` you want to return.\n\nSample `msg.params`:\n\n    {\n        \"rows\": 100\n    }",
-	"category": "CBC Ent EDR",
-	"in": [{
-		"x": 100,
-		"y": 140,
-		"wires": [{
-			"id": "14bfe438.881d7c"
-		}]
-	}],
-	"out": [{
-		"x": 1420,
-		"y": 100,
-		"wires": [{
-			"id": "94bb2184.ab1ba",
-			"port": 0
-		}]
-	}, {
-		"x": 1420,
-		"y": 180,
-		"wires": [{
-			"id": "6c33ef56.bf598",
-			"port": 0
-		}]
-	}],
-	"env": [],
-	"color": "#6eb43d",
-	"icon": "node-red/file.svg",
-	"status": {
-		"x": 340,
-		"y": 80,
-		"wires": [{
-			"id": "d5d18c75.59211",
-			"port": 0
-		}]
-	}
-}, {
-	"id": "2a17d812.eb5848",
-	"type": "function",
-	"z": "b4879a8e.249268",
-	"name": "build http request",
-	"func": "msg.url = [msg.cb.url, 'ubs/v1/orgs', msg.cb.org_key, 'sha256', msg.payload, 'summary/file_path'].join('/');\n\nmsg.headers = {\n    'X-Auth-Token': [msg.cb.custom_api_key, msg.cb.custom_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 610,
-	"y": 140,
-	"wires": [
-		["dce82345.cc43d"]
-	]
-}, {
-	"id": "dce82345.cc43d",
-	"type": "http request",
-	"z": "b4879a8e.249268",
-	"name": "get process summary",
-	"method": "POST",
-	"ret": "obj",
-	"paytoqs": false,
-	"url": "",
-	"tls": "",
-	"persist": false,
-	"proxy": "",
-	"authType": "",
-	"x": 860,
-	"y": 140,
-	"wires": [
-		["d399ae4a.f8c2f"]
-	]
-}, {
-	"id": "d399ae4a.f8c2f",
-	"type": "switch",
-	"z": "b4879a8e.249268",
-	"name": "status code",
-	"property": "statusCode",
-	"propertyType": "msg",
-	"rules": [{
-		"t": "eq",
-		"v": "200",
-		"vt": "num"
-	}, {
-		"t": "else"
-	}],
-	"checkall": "true",
-	"repair": false,
-	"outputs": 2,
-	"x": 1070,
-	"y": 140,
-	"wires": [
-		["94bb2184.ab1ba"],
-		["6c33ef56.bf598"]
-	]
-}, {
-	"id": "14bfe438.881d7c",
-	"type": "function",
-	"z": "b4879a8e.249268",
-	"name": "set status",
-	"func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n    return;\n}\n\nnode.status({\n    fill: 'grey',\n    text: 'finding file paths...'\n});\n\nmsg.delay = msg.cb.delay;\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 240,
-	"y": 140,
-	"wires": [
-		["83756df8.6f402"]
-	]
-}, {
-	"id": "6c33ef56.bf598",
-	"type": "function",
-	"z": "b4879a8e.249268",
-	"name": "set status",
-	"func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1280,
-	"y": 180,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "83756df8.6f402",
-	"type": "delay",
-	"z": "b4879a8e.249268",
-	"name": "delay",
-	"pauseType": "delayv",
-	"timeout": "1",
-	"timeoutUnits": "seconds",
-	"rate": "1",
-	"nbRateUnits": "1",
-	"rateUnits": "second",
-	"randomFirst": "1",
-	"randomLast": "5",
-	"randomUnits": "seconds",
-	"drop": false,
-	"x": 410,
-	"y": 140,
-	"wires": [
-		["2a17d812.eb5848"]
-	]
-}, {
-	"id": "d5d18c75.59211",
-	"type": "status",
-	"z": "b4879a8e.249268",
-	"name": "",
-	"scope": ["14bfe438.881d7c", "6c33ef56.bf598", "94bb2184.ab1ba"],
-	"x": 200,
-	"y": 80,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "94bb2184.ab1ba",
-	"type": "function",
-	"z": "b4879a8e.249268",
-	"name": "set status",
-	"func": "node.status({\n    fill: 'green',\n    text: 'found file paths'\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1280,
-	"y": 100,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "5885b9e1.cd2488",
-	"type": "subflow",
-	"name": "ubs-request-signature",
-	"info": "`msg.payload` is expected to be a string of a sha256.\n\nOptionally you can provide `msg.params` with the number of `rows` you want to return.\n\nSample `msg.params`:\n\n    {\n        \"rows\": 100\n    }",
-	"category": "CBC Ent EDR",
-	"in": [{
-		"x": 120,
-		"y": 140,
-		"wires": [{
-			"id": "74f4a5.57503b5c"
-		}]
-	}],
-	"out": [{
-		"x": 1420,
-		"y": 100,
-		"wires": [{
-			"id": "542b51bb.a8c87",
-			"port": 0
-		}]
-	}, {
-		"x": 1420,
-		"y": 180,
-		"wires": [{
-			"id": "9a67f4db.32abe8",
-			"port": 0
-		}]
-	}],
-	"env": [],
-	"color": "#6eb43d",
-	"icon": "node-red/file.svg",
-	"status": {
-		"x": 320,
-		"y": 80,
-		"wires": [{
-			"id": "77362026.ee1df",
-			"port": 0
-		}]
-	}
-}, {
-	"id": "57bf787a.824b88",
-	"type": "function",
-	"z": "5885b9e1.cd2488",
-	"name": "build http request",
-	"func": "msg.url = [msg.cb.url, 'ubs/v1/orgs', msg.cb.org_key, 'sha256', msg.payload, 'summary/signature'].join('/');\n\nmsg.headers = {\n    'X-Auth-Token': [msg.cb.custom_api_key, msg.cb.custom_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 610,
-	"y": 140,
-	"wires": [
-		["a52acd23.9f2de"]
-	]
-}, {
-	"id": "a52acd23.9f2de",
-	"type": "http request",
-	"z": "5885b9e1.cd2488",
-	"name": "get process summary",
-	"method": "GET",
-	"ret": "obj",
-	"paytoqs": false,
-	"url": "",
-	"tls": "",
-	"persist": false,
-	"proxy": "",
-	"authType": "",
-	"x": 860,
-	"y": 140,
-	"wires": [
-		["f775f20b.c9067"]
-	]
-}, {
-	"id": "f775f20b.c9067",
-	"type": "switch",
-	"z": "5885b9e1.cd2488",
-	"name": "status code",
-	"property": "statusCode",
-	"propertyType": "msg",
-	"rules": [{
-		"t": "eq",
-		"v": "200",
-		"vt": "num"
-	}, {
-		"t": "else"
-	}],
-	"checkall": "true",
-	"repair": false,
-	"outputs": 2,
-	"x": 1070,
-	"y": 140,
-	"wires": [
-		["542b51bb.a8c87"],
-		["9a67f4db.32abe8"]
-	]
-}, {
-	"id": "74f4a5.57503b5c",
-	"type": "function",
-	"z": "5885b9e1.cd2488",
-	"name": "set status",
-	"func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n    return;\n}\n\nnode.status({\n    fill: 'grey',\n    text: 'requesting signature...'\n});\n\nmsg.delay = msg.cb.delay;\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 240,
-	"y": 140,
-	"wires": [
-		["fe634cc8.e19fe"]
-	]
-}, {
-	"id": "9a67f4db.32abe8",
-	"type": "function",
-	"z": "5885b9e1.cd2488",
-	"name": "set status",
-	"func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1280,
-	"y": 180,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "fe634cc8.e19fe",
-	"type": "delay",
-	"z": "5885b9e1.cd2488",
-	"name": "delay",
-	"pauseType": "delayv",
-	"timeout": "1",
-	"timeoutUnits": "seconds",
-	"rate": "1",
-	"nbRateUnits": "1",
-	"rateUnits": "second",
-	"randomFirst": "1",
-	"randomLast": "5",
-	"randomUnits": "seconds",
-	"drop": false,
-	"x": 410,
-	"y": 140,
-	"wires": [
-		["57bf787a.824b88"]
-	]
-}, {
-	"id": "77362026.ee1df",
-	"type": "status",
-	"z": "5885b9e1.cd2488",
-	"name": "",
-	"scope": ["74f4a5.57503b5c", "9a67f4db.32abe8", "542b51bb.a8c87"],
-	"x": 200,
-	"y": 80,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "542b51bb.a8c87",
-	"type": "function",
-	"z": "5885b9e1.cd2488",
-	"name": "set status",
-	"func": "node.status({\n    fill: 'green',\n    text: 'found signature'\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1280,
-	"y": 100,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "7673d6bd.6715e8",
-	"type": "subflow",
-	"name": "replace-reports",
-	"info": "Expects `msg.cb.feed_id` to have an integer for the feed you want to update.\nSample `msg.payload`:\n\n    {\n        \"reports\": [\n            {\n                \"id\": \"sample-id-123\",\n                \"timestamp\": {{$timestamp}},\n                \"title\": \"Sample Title\",\n                \"description\": \"Sample Description.\",\n                \"severity\": 5,\n                \"link\": \"http://sample.com\",\n                \"iocs\": {\n                \t\"md5\": [\n                \t\t\"ABCDEF1234567890ABCDEF1234567890\"\n            \t\t],\n                \t\"ipv4\": [\n            \t\t\t\"50.62.230.1\"\n            \t\t],\n                \t\"dns\": [\n                \t\t\"everydayim.com\"\n            \t\t]\n                }\n            }\n        ]\n    }",
-	"category": "CBC Ent EDR",
-	"in": [{
-		"x": 120,
-		"y": 140,
-		"wires": [{
-			"id": "daf63013.18d2c"
-		}]
-	}],
-	"out": [{
-		"x": 1260,
-		"y": 100,
-		"wires": [{
-			"id": "4d7a215b.82ceb",
-			"port": 0
-		}]
-	}, {
-		"x": 1260,
-		"y": 180,
-		"wires": [{
-			"id": "d54ddc5b.38eca",
-			"port": 0
-		}]
-	}],
-	"env": [],
-	"color": "#6eb43d",
-	"icon": "node-red/join.svg",
-	"status": {
-		"x": 320,
-		"y": 80,
-		"wires": [{
-			"id": "4ce2b46b.72484c",
-			"port": 0
-		}]
-	}
-}, {
-	"id": "7ec0c3f7.6f93fc",
-	"type": "function",
-	"z": "7673d6bd.6715e8",
-	"name": "Build request",
-	"func": "msg.url = [msg.cb.url, 'threathunter/feedmgr/v2/orgs', msg.cb.org_key, 'feeds', msg.cb.feed_id, 'reports'].join('/');\n\nmsg.headers = {\n    // The ThreatHunter endpoints use the legacy API key\n    'X-Auth-Token': [msg.cb.custom_api_key, msg.cb.custom_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 610,
-	"y": 140,
-	"wires": [
-		["f1b330fd.ddf8e"]
-	]
-}, {
-	"id": "f1b330fd.ddf8e",
-	"type": "http request",
-	"z": "7673d6bd.6715e8",
-	"name": "",
-	"method": "POST",
-	"ret": "obj",
-	"paytoqs": false,
-	"url": "",
-	"tls": "",
-	"proxy": "",
-	"authType": "",
-	"x": 790,
-	"y": 140,
-	"wires": [
-		["223c8d5b.7c3712"]
-	]
-}, {
-	"id": "223c8d5b.7c3712",
-	"type": "switch",
-	"z": "7673d6bd.6715e8",
-	"name": "",
-	"property": "statusCode",
-	"propertyType": "msg",
-	"rules": [{
-		"t": "eq",
-		"v": "200",
-		"vt": "num"
-	}, {
-		"t": "else"
-	}],
-	"checkall": "true",
-	"repair": false,
-	"outputs": 2,
-	"x": 950,
-	"y": 140,
-	"wires": [
-		["4d7a215b.82ceb"],
-		["d54ddc5b.38eca"]
-	]
-}, {
-	"id": "daf63013.18d2c",
-	"type": "function",
-	"z": "7673d6bd.6715e8",
-	"name": "set status",
-	"func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n}\n\nelse {\n    node.status({\n        fill: 'grey',\n        text: 'getting data...'\n    });\n}\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 240,
-	"y": 140,
-	"wires": [
-		["acf0c146.e965"]
-	]
-}, {
-	"id": "d54ddc5b.38eca",
-	"type": "function",
-	"z": "7673d6bd.6715e8",
-	"name": "set status",
-	"func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1140,
-	"y": 180,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "acf0c146.e965",
-	"type": "delay",
-	"z": "7673d6bd.6715e8",
-	"name": "",
-	"pauseType": "delay",
-	"timeout": "1",
-	"timeoutUnits": "seconds",
-	"rate": "1",
-	"nbRateUnits": "1",
-	"rateUnits": "second",
-	"randomFirst": "1",
-	"randomLast": "5",
-	"randomUnits": "seconds",
-	"drop": false,
-	"x": 420,
-	"y": 140,
-	"wires": [
-		["7ec0c3f7.6f93fc"]
-	]
-}, {
-	"id": "4ce2b46b.72484c",
-	"type": "status",
-	"z": "7673d6bd.6715e8",
-	"name": "",
-	"scope": ["daf63013.18d2c", "d54ddc5b.38eca", "4d7a215b.82ceb"],
-	"x": 200,
-	"y": 80,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "4d7a215b.82ceb",
-	"type": "function",
-	"z": "7673d6bd.6715e8",
-	"name": "set status",
-	"func": "node.status({\n    fill: 'green',\n    text: 'submitted query'\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1140,
-	"y": 100,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "a8d4fd8d.2d318",
-	"type": "subflow",
-	"name": "get-feed-details",
-	"info": "`msg.payload` should be an integer of the feed ID.\n\nOutputs the raw JSON response.",
-	"category": "CBC Ent EDR",
-	"in": [{
-		"x": 120,
-		"y": 140,
-		"wires": [{
-			"id": "abf05f0d.69206"
-		}]
-	}],
-	"out": [{
-		"x": 1280,
-		"y": 100,
-		"wires": [{
-			"id": "c28612b0.f1501",
-			"port": 0
-		}]
-	}, {
-		"x": 1280,
-		"y": 180,
-		"wires": [{
-			"id": "109435.effa7bcb",
-			"port": 0
-		}]
-	}],
-	"env": [],
-	"color": "#6eb43d",
-	"icon": "node-red/join.svg",
-	"status": {
-		"x": 320,
-		"y": 80,
-		"wires": [{
-			"id": "d49f4735.c97098",
-			"port": 0
-		}]
-	}
-}, {
-	"id": "fbcfdbf4.b2cc58",
-	"type": "function",
-	"z": "a8d4fd8d.2d318",
-	"name": "Build request",
-	"func": "msg.url = [msg.cb.url, 'threathunter/feedmgr/v2/orgs', msg.cb.org_key, 'feeds', msg.payload].join('/');\n\nmsg.headers = {\n    // The ThreatHunter endpoints use the legacy API key\n    'X-Auth-Token': [msg.cb.custom_api_key, msg.cb.custom_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 610,
-	"y": 140,
-	"wires": [
-		["9ce20255.12653"]
-	]
-}, {
-	"id": "9ce20255.12653",
-	"type": "http request",
-	"z": "a8d4fd8d.2d318",
-	"name": "",
-	"method": "GET",
-	"ret": "obj",
-	"paytoqs": false,
-	"url": "",
-	"tls": "",
-	"proxy": "",
-	"authType": "",
-	"x": 790,
-	"y": 140,
-	"wires": [
-		["b198c3ad.b8bab"]
-	]
-}, {
-	"id": "b198c3ad.b8bab",
-	"type": "switch",
-	"z": "a8d4fd8d.2d318",
-	"name": "",
-	"property": "statusCode",
-	"propertyType": "msg",
-	"rules": [{
-		"t": "eq",
-		"v": "200",
-		"vt": "num"
-	}, {
-		"t": "else"
-	}],
-	"checkall": "true",
-	"repair": false,
-	"outputs": 2,
-	"x": 950,
-	"y": 140,
-	"wires": [
-		["c28612b0.f1501"],
-		["109435.effa7bcb"]
-	]
-}, {
-	"id": "abf05f0d.69206",
-	"type": "function",
-	"z": "a8d4fd8d.2d318",
-	"name": "set status",
-	"func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n}\n\nelse {\n    node.status({\n        fill: 'grey',\n        text: 'getting data...'\n    });\n}\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 240,
-	"y": 140,
-	"wires": [
-		["4e40f3cb.f2990c"]
-	]
-}, {
-	"id": "109435.effa7bcb",
-	"type": "function",
-	"z": "a8d4fd8d.2d318",
-	"name": "set status",
-	"func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1140,
-	"y": 180,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "4e40f3cb.f2990c",
-	"type": "delay",
-	"z": "a8d4fd8d.2d318",
-	"name": "",
-	"pauseType": "delay",
-	"timeout": "1",
-	"timeoutUnits": "seconds",
-	"rate": "1",
-	"nbRateUnits": "1",
-	"rateUnits": "second",
-	"randomFirst": "1",
-	"randomLast": "5",
-	"randomUnits": "seconds",
-	"drop": false,
-	"x": 420,
-	"y": 140,
-	"wires": [
-		["fbcfdbf4.b2cc58"]
-	]
-}, {
-	"id": "d49f4735.c97098",
-	"type": "status",
-	"z": "a8d4fd8d.2d318",
-	"name": "",
-	"scope": ["abf05f0d.69206", "109435.effa7bcb", "c28612b0.f1501"],
-	"x": 200,
-	"y": 80,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "c28612b0.f1501",
-	"type": "function",
-	"z": "a8d4fd8d.2d318",
-	"name": "set status",
-	"func": "node.status({\n    fill: 'green',\n    text: 'submitted query'\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1140,
-	"y": 100,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "dda63abb.9bd258",
-	"type": "subflow",
-	"name": "create-new-feed",
-	"info": "Sample `msg.payload`:\n\n    {\n        \"feedinfo\": {\n            \"name\": \"Test Feed\",\n            \"owner\": \"7DESJ9GN\",\n            \"provider_url\": \"https://mynewfeed.io\",\n            \"summary\": \"My summary...\",\n            \"category\": \"Testing\",\n            \"source_label\": null,\n            \"access\": \"private\",\n            \"id\": \"ituBeDltRfGyf46dOWukMA\"\n        },\n        \"reports\": [\n            {\n                \"id\": \"random-id-12345\",\n                \"timestamp\": 1561485879,\n                \"title\": \"This is my super awesome test feed\",\n                \"description\": \"Pretty sweet, huh?\",\n                \"severity\": 10,\n                \"link\": \"\",\n                \"iocs\": {\n                    \"md5\": [],\n                    \"ipv4\": [\n                        \"138.68.199.111\",\n                        \"178.128.243.34\"\n                    ],\n                    \"dns\": [\n                        \"tothewater.com\",\n                        \"cute-roulette.com\"\n                    ]\n                }\n            }\n        ]\n    }",
-	"category": "CBC Ent EDR",
-	"in": [{
-		"x": 100,
-		"y": 140,
-		"wires": [{
-			"id": "c686016.f8e6d"
-		}]
-	}],
-	"out": [{
-		"x": 1280,
-		"y": 100,
-		"wires": [{
-			"id": "f19462b6.5b9e3",
-			"port": 0
-		}]
-	}, {
-		"x": 1280,
-		"y": 180,
-		"wires": [{
-			"id": "fbbba563.c08478",
-			"port": 0
-		}]
-	}],
-	"env": [],
-	"color": "#6eb43d",
-	"icon": "node-red/join.svg",
-	"status": {
-		"x": 340,
-		"y": 80,
-		"wires": [{
-			"id": "7423c9c2.7d1318",
-			"port": 0
-		}]
-	}
-}, {
-	"id": "2e55e548.ca0c2a",
-	"type": "function",
-	"z": "dda63abb.9bd258",
-	"name": "Build request",
-	"func": "msg.url = [msg.cb.url, 'threathunter/feedmgr/v2/orgs', msg.cb.org_key, 'feeds'].join('/');\n\nmsg.headers = {\n    // The ThreatHunter endpoints use the legacy API key\n    'X-Auth-Token': [msg.cb.custom_api_key, msg.cb.custom_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 610,
-	"y": 140,
-	"wires": [
-		["4167047a.726e6c"]
-	]
-}, {
-	"id": "4167047a.726e6c",
-	"type": "http request",
-	"z": "dda63abb.9bd258",
-	"name": "",
-	"method": "POST",
-	"ret": "obj",
-	"paytoqs": false,
-	"url": "",
-	"tls": "",
-	"proxy": "",
-	"authType": "",
-	"x": 790,
-	"y": 140,
-	"wires": [
-		["460dc053.382"]
-	]
-}, {
-	"id": "460dc053.382",
-	"type": "switch",
-	"z": "dda63abb.9bd258",
-	"name": "",
-	"property": "statusCode",
-	"propertyType": "msg",
-	"rules": [{
-		"t": "eq",
-		"v": "200",
-		"vt": "num"
-	}, {
-		"t": "else"
-	}],
-	"checkall": "true",
-	"repair": false,
-	"outputs": 2,
-	"x": 950,
-	"y": 140,
-	"wires": [
-		["f19462b6.5b9e3"],
-		["fbbba563.c08478"]
-	]
-}, {
-	"id": "c686016.f8e6d",
-	"type": "function",
-	"z": "dda63abb.9bd258",
-	"name": "set status",
-	"func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n}\n\nelse {\n    node.status({\n        fill: 'grey',\n        text: 'getting data...'\n    });\n}\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 240,
-	"y": 140,
-	"wires": [
-		["de91677b.94f808"]
-	]
-}, {
-	"id": "fbbba563.c08478",
-	"type": "function",
-	"z": "dda63abb.9bd258",
-	"name": "set status",
-	"func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1140,
-	"y": 180,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "de91677b.94f808",
-	"type": "delay",
-	"z": "dda63abb.9bd258",
-	"name": "",
-	"pauseType": "delay",
-	"timeout": "1",
-	"timeoutUnits": "seconds",
-	"rate": "1",
-	"nbRateUnits": "1",
-	"rateUnits": "second",
-	"randomFirst": "1",
-	"randomLast": "5",
-	"randomUnits": "seconds",
-	"drop": false,
-	"x": 420,
-	"y": 140,
-	"wires": [
-		["2e55e548.ca0c2a"]
-	]
-}, {
-	"id": "7423c9c2.7d1318",
-	"type": "status",
-	"z": "dda63abb.9bd258",
-	"name": "",
-	"scope": ["c686016.f8e6d", "fbbba563.c08478", "f19462b6.5b9e3"],
-	"x": 200,
-	"y": 80,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "f19462b6.5b9e3",
-	"type": "function",
-	"z": "dda63abb.9bd258",
-	"name": "set status",
-	"func": "node.status({\n    fill: 'green',\n    text: 'submitted query'\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1140,
-	"y": 100,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "f67eec35.0acd3",
-	"type": "subflow",
-	"name": "get-all-feeds",
-	"info": "",
-	"category": "CBC Ent EDR",
-	"in": [{
-		"x": 100,
-		"y": 140,
-		"wires": [{
-			"id": "df292416.fc5b38"
-		}]
-	}],
-	"out": [{
-		"x": 1280,
-		"y": 100,
-		"wires": [{
-			"id": "c4cc1651.e0ba68",
-			"port": 0
-		}]
-	}, {
-		"x": 1280,
-		"y": 180,
-		"wires": [{
-			"id": "f0a00f.add7cff",
-			"port": 0
-		}]
-	}],
-	"env": [],
-	"color": "#6eb43d",
-	"icon": "node-red/join.svg",
-	"status": {
-		"x": 320,
-		"y": 80,
-		"wires": [{
-			"id": "58b087da.840178",
-			"port": 0
-		}]
-	}
-}, {
-	"id": "37779e43.a60a52",
-	"type": "function",
-	"z": "f67eec35.0acd3",
-	"name": "Build request",
-	"func": "msg.url = [msg.cb.url, 'threathunter/feedmgr/v2/orgs', msg.cb.org_key, 'feeds'].join('/');\n\nmsg.headers = {\n    // The ThreatHunter endpoints use the legacy API key\n    'X-Auth-Token': [msg.cb.custom_api_key, msg.cb.custom_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 610,
-	"y": 140,
-	"wires": [
-		["cca6ff3.6a697"]
-	]
-}, {
-	"id": "cca6ff3.6a697",
-	"type": "http request",
-	"z": "f67eec35.0acd3",
-	"name": "",
-	"method": "GET",
-	"ret": "obj",
-	"paytoqs": false,
-	"url": "",
-	"tls": "",
-	"proxy": "",
-	"authType": "",
-	"x": 790,
-	"y": 140,
-	"wires": [
-		["d88ee3c6.8d907"]
-	]
-}, {
-	"id": "d88ee3c6.8d907",
-	"type": "switch",
-	"z": "f67eec35.0acd3",
-	"name": "",
-	"property": "statusCode",
-	"propertyType": "msg",
-	"rules": [{
-		"t": "eq",
-		"v": "200",
-		"vt": "num"
-	}, {
-		"t": "else"
-	}],
-	"checkall": "true",
-	"repair": false,
-	"outputs": 2,
-	"x": 950,
-	"y": 140,
-	"wires": [
-		["c4cc1651.e0ba68"],
-		["f0a00f.add7cff"]
-	]
-}, {
-	"id": "df292416.fc5b38",
-	"type": "function",
-	"z": "f67eec35.0acd3",
-	"name": "set status",
-	"func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n}\n\nelse {\n    node.status({\n        fill: 'grey',\n        text: 'getting data...'\n    });\n}\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 240,
-	"y": 140,
-	"wires": [
-		["b4ae24d7.3af018"]
-	]
-}, {
-	"id": "f0a00f.add7cff",
-	"type": "function",
-	"z": "f67eec35.0acd3",
-	"name": "set status",
-	"func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1140,
-	"y": 180,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "b4ae24d7.3af018",
-	"type": "delay",
-	"z": "f67eec35.0acd3",
-	"name": "",
-	"pauseType": "delay",
-	"timeout": "1",
-	"timeoutUnits": "seconds",
-	"rate": "1",
-	"nbRateUnits": "1",
-	"rateUnits": "second",
-	"randomFirst": "1",
-	"randomLast": "5",
-	"randomUnits": "seconds",
-	"drop": false,
-	"x": 420,
-	"y": 140,
-	"wires": [
-		["37779e43.a60a52"]
-	]
-}, {
-	"id": "58b087da.840178",
-	"type": "status",
-	"z": "f67eec35.0acd3",
-	"name": "",
-	"scope": ["df292416.fc5b38", "f0a00f.add7cff", "c4cc1651.e0ba68"],
-	"x": 200,
-	"y": 80,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "c4cc1651.e0ba68",
-	"type": "function",
-	"z": "f67eec35.0acd3",
-	"name": "set status",
-	"func": "node.status({\n    fill: 'green',\n    text: 'submitted query'\n});\n\nreturn msg;",
-	"outputs": 1,
-	"noerr": 0,
-	"x": 1140,
-	"y": 100,
-	"wires": [
-		[]
-	]
-}, {
-	"id": "64240328.75ec0c",
-	"type": "tab",
-	"label": "VMware Carbon Black Cloud: Enterprise EDR",
-	"disabled": false,
-	"info": ""
-}, {
-	"id": "2ed4b711.a030c8",
-	"type": "subflow:f67eec35.0acd3",
-	"z": "64240328.75ec0c",
-	"name": "",
-	"x": 290,
-	"y": 100,
-	"wires": [
-		[],
-		[]
-	]
-}, {
-	"id": "e3519a79.df1e98",
-	"type": "subflow:dda63abb.9bd258",
-	"z": "64240328.75ec0c",
-	"name": "",
-	"x": 300,
-	"y": 140,
-	"wires": [
-		[],
-		[]
-	]
-}, {
-	"id": "a3b826dc.d72268",
-	"type": "subflow:a8d4fd8d.2d318",
-	"z": "64240328.75ec0c",
-	"name": "",
-	"x": 300,
-	"y": 180,
-	"wires": [
-		[],
-		[]
-	]
-}, {
-	"id": "c83b7311.dda46",
-	"type": "subflow:7673d6bd.6715e8",
-	"z": "64240328.75ec0c",
-	"name": "",
-	"x": 300,
-	"y": 220,
-	"wires": [
-		[],
-		[]
-	]
-}, {
-	"id": "da0c8363.45ba3",
-	"type": "subflow:5885b9e1.cd2488",
-	"z": "64240328.75ec0c",
-	"name": "",
-	"x": 320,
-	"y": 260,
-	"wires": [
-		[],
-		[]
-	]
-}, {
-	"id": "29f7b278.569e9e",
-	"type": "subflow:b4879a8e.249268",
-	"z": "64240328.75ec0c",
-	"name": "",
-	"x": 310,
-	"y": 300,
-	"wires": [
-		[],
-		[]
-	]
-}, {
-	"id": "f7642e09.4769a",
-	"type": "subflow:b746de58.ad643",
-	"z": "64240328.75ec0c",
-	"name": "",
-	"x": 310,
-	"y": 340,
-	"wires": [
-		[],
-		[]
-	]
-}, {
-	"id": "98b59af.27c9e68",
-	"type": "subflow:6e754fbf.28f2a",
-	"z": "64240328.75ec0c",
-	"name": "",
-	"x": 320,
-	"y": 380,
-	"wires": [
-		[],
-		[]
-	]
-}, {
-	"id": "77379b14.39efe4",
-	"type": "subflow:ba4e84d0.27ae58",
-	"z": "64240328.75ec0c",
-	"name": "",
-	"x": 330,
-	"y": 420,
-	"wires": [
-		[],
-		[]
-	]
-}, {
-	"id": "4408c876.246248",
-	"type": "subflow:3b190132.4275ae",
-	"z": "64240328.75ec0c",
-	"name": "",
-	"x": 340,
-	"y": 460,
-	"wires": [
-		[],
-		[]
-	]
-}, {
-	"id": "ea960fb3.67f4a",
-	"type": "subflow:ec94876c.eca868",
-	"z": "64240328.75ec0c",
-	"name": "",
-	"x": 340,
-	"y": 500,
-	"wires": [
-		[],
-		[]
-	]
-}, {
-	"id": "1e9c8d60.e59f13",
-	"type": "subflow:384f9022.55b3a",
-	"z": "64240328.75ec0c",
-	"name": "",
-	"x": 360,
-	"y": 540,
-	"wires": [
-		[],
-		[]
-	]
-}, {
-	"id": "cccbc93f.2c63c8",
-	"type": "subflow:88719de.3eb786",
-	"z": "64240328.75ec0c",
-	"name": "",
-	"x": 350,
-	"y": 580,
-	"wires": [
-		[],
-		[]
-	]
-}, {
-	"id": "129f9c52.c0b3d4",
-	"type": "subflow:bd6025d0.7f0518",
-	"z": "64240328.75ec0c",
-	"name": "",
-	"x": 360,
-	"y": 620,
-	"wires": [
-		[],
-		[]
-	]
-}]
+[
+    {
+        "id": "384f9022.55b3a",
+        "type": "subflow",
+        "name": "get-enriched-events-search-results",
+        "info": "",
+        "category": "CBC Ent EDR",
+        "in": [
+            {
+                "x": 120,
+                "y": 140,
+                "wires": [
+                    {
+                        "id": "3bfd08a7.504d48"
+                    }
+                ]
+            }
+        ],
+        "out": [
+            {
+                "x": 1360,
+                "y": 100,
+                "wires": [
+                    {
+                        "id": "9f4676f5.356bc8",
+                        "port": 0
+                    }
+                ]
+            },
+            {
+                "x": 1320,
+                "y": 180,
+                "wires": [
+                    {
+                        "id": "e21f54fe.522bb8",
+                        "port": 0
+                    }
+                ]
+            }
+        ],
+        "env": [],
+        "color": "#6eb43d",
+        "status": {
+            "x": 320,
+            "y": 80,
+            "wires": [
+                {
+                    "id": "85b260d7.c91dc",
+                    "port": 0
+                }
+            ]
+        }
+    },
+    {
+        "id": "e21f54fe.522bb8",
+        "type": "function",
+        "z": "384f9022.55b3a",
+        "name": "return error",
+        "func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1170,
+        "y": 180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "9d1a47b5.484d98",
+        "type": "function",
+        "z": "384f9022.55b3a",
+        "name": "get search results",
+        "func": "msg.url = [msg.cb.url, 'api/investigate/v2/orgs', msg.cb.org_key, 'enriched_events/search_jobs', msg.payload, 'results'].join('/');\n\nmsg.headers = {\n    // The ThreatHunter endpoints use the legacy API key\n    'X-Auth-Token': [msg.cb.custom_api_key, msg.cb.custom_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 590,
+        "y": 140,
+        "wires": [
+            [
+                "afc609a1.d68488"
+            ]
+        ]
+    },
+    {
+        "id": "afc609a1.d68488",
+        "type": "http request",
+        "z": "384f9022.55b3a",
+        "name": "",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": false,
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "authType": "",
+        "x": 790,
+        "y": 140,
+        "wires": [
+            [
+                "4aea54f1.211cec"
+            ]
+        ]
+    },
+    {
+        "id": "4aea54f1.211cec",
+        "type": "switch",
+        "z": "384f9022.55b3a",
+        "name": "statusCode",
+        "property": "statusCode",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "200",
+                "vt": "num"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 970,
+        "y": 140,
+        "wires": [
+            [
+                "9f4676f5.356bc8"
+            ],
+            [
+                "e21f54fe.522bb8"
+            ]
+        ]
+    },
+    {
+        "id": "9f4676f5.356bc8",
+        "type": "function",
+        "z": "384f9022.55b3a",
+        "name": "search complete?",
+        "func": "if (msg.payload.contacted !== msg.payload.completed) {\n    node.status({\n        text: 'Search not finished. Found ' + msg.payload.num_found + ' results',\n        fill: 'yellow'\n    });\n} else {\n    node.status({\n        fill: 'green',\n        text: 'Found ' + msg.payload.num_found + ' results'\n    });\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1190,
+        "y": 100,
+        "wires": [
+            []
+        ],
+        "outputLabels": [
+            "yes"
+        ]
+    },
+    {
+        "id": "85b260d7.c91dc",
+        "type": "status",
+        "z": "384f9022.55b3a",
+        "name": "",
+        "scope": [
+            "e21f54fe.522bb8",
+            "9f4676f5.356bc8",
+            "3bfd08a7.504d48"
+        ],
+        "x": 200,
+        "y": 80,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "3bfd08a7.504d48",
+        "type": "function",
+        "z": "384f9022.55b3a",
+        "name": "set status",
+        "func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n}\n\nelse {\n    node.status({\n        fill: 'grey',\n        text: 'starting process search...'\n    });\n}\n\nmsg.delay = msg.cb.delay || 1;\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 240,
+        "y": 140,
+        "wires": [
+            [
+                "13758d5b.61fe73"
+            ]
+        ]
+    },
+    {
+        "id": "13758d5b.61fe73",
+        "type": "delay",
+        "z": "384f9022.55b3a",
+        "name": "",
+        "pauseType": "delayv",
+        "timeout": "1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "x": 390,
+        "y": 140,
+        "wires": [
+            [
+                "9d1a47b5.484d98"
+            ]
+        ]
+    },
+    {
+        "id": "bd6025d0.7f0518",
+        "type": "subflow",
+        "name": "get-enriched-events-facet-results",
+        "info": "Retrieves the process facet results for a given `job_id`.\n\n`msg.payload` should be a valid `job_id`.\n\n### RBAC Permissions Required\n\n|Permission (.notation name)\t|Operation(s)|\n|---|---|\n|threathunter.events\t|READ|\n\n[See the Documentation](https://developer.carbonblack.com/reference/carbon-black-cloud/cb-threathunter/latest/process-search-v2/#get-enriched-events-facet-results)",
+        "category": "CBC Ent EDR",
+        "in": [
+            {
+                "x": 80,
+                "y": 140,
+                "wires": [
+                    {
+                        "id": "9ee511f3.9b6f2"
+                    }
+                ]
+            }
+        ],
+        "out": [
+            {
+                "x": 1320,
+                "y": 100,
+                "wires": [
+                    {
+                        "id": "c974ee08.4cf47",
+                        "port": 0
+                    }
+                ]
+            },
+            {
+                "x": 1320,
+                "y": 180,
+                "wires": [
+                    {
+                        "id": "e93d38a3.055f18",
+                        "port": 0
+                    }
+                ]
+            }
+        ],
+        "env": [],
+        "color": "#6eb43d",
+        "status": {
+            "x": 320,
+            "y": 80,
+            "wires": [
+                {
+                    "id": "b98ad4af.99c6b8",
+                    "port": 0
+                }
+            ]
+        }
+    },
+    {
+        "id": "672334ce.25c98c",
+        "type": "http request",
+        "z": "bd6025d0.7f0518",
+        "name": "",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": false,
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "authType": "",
+        "x": 790,
+        "y": 140,
+        "wires": [
+            [
+                "73dd4955.45eb28"
+            ]
+        ]
+    },
+    {
+        "id": "bea2f54e.178b78",
+        "type": "function",
+        "z": "bd6025d0.7f0518",
+        "name": "get search results",
+        "func": "msg.url = [msg.cb.url, 'api/investigate/v2/orgs', msg.cb.org_key, 'enriched_events/facet_jobs', msg.payload, 'results'].join('/');\n\nmsg.headers = {\n    // The ThreatHunter endpoints use the legacy API key\n    'X-Auth-Token': [msg.cb.custom_api_key, msg.cb.custom_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 590,
+        "y": 140,
+        "wires": [
+            [
+                "672334ce.25c98c"
+            ]
+        ]
+    },
+    {
+        "id": "73dd4955.45eb28",
+        "type": "switch",
+        "z": "bd6025d0.7f0518",
+        "name": "statusCode",
+        "property": "statusCode",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "200",
+                "vt": "num"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 970,
+        "y": 140,
+        "wires": [
+            [
+                "c974ee08.4cf47"
+            ],
+            [
+                "e93d38a3.055f18"
+            ]
+        ]
+    },
+    {
+        "id": "c974ee08.4cf47",
+        "type": "function",
+        "z": "bd6025d0.7f0518",
+        "name": "search complete?",
+        "func": "if (msg.payload.contacted !== msg.payload.completed) {\n    msg.payload.job_id = msg.temp.job_id;\n    \n    node.status({\n        text: 'Search not finished. Found ' + msg.payload.num_found + ' results',\n        fill: 'yellow'\n    });\n    \n} else {\n    \n    node.status({\n        text: 'Search finished. Found ' + msg.payload.num_found + ' results',\n        fill: 'green'\n    });\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1170,
+        "y": 100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "e93d38a3.055f18",
+        "type": "function",
+        "z": "bd6025d0.7f0518",
+        "name": "return error",
+        "func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1150,
+        "y": 180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "9ee511f3.9b6f2",
+        "type": "function",
+        "z": "bd6025d0.7f0518",
+        "name": "set status",
+        "func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n    return;\n}\n\nelse {\n    node.status({\n        fill: 'grey',\n        text: 'starting enriched events facet search...'\n    });\n}\n\nmsg.delay = msg.cb.delay || 1;\n\nif (!msg.temp) {\n    msg.temp = {};\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 220,
+        "y": 140,
+        "wires": [
+            [
+                "7161320e.00dfec"
+            ]
+        ]
+    },
+    {
+        "id": "7161320e.00dfec",
+        "type": "delay",
+        "z": "bd6025d0.7f0518",
+        "name": "",
+        "pauseType": "delayv",
+        "timeout": "1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "x": 390,
+        "y": 140,
+        "wires": [
+            [
+                "bea2f54e.178b78"
+            ]
+        ]
+    },
+    {
+        "id": "b98ad4af.99c6b8",
+        "type": "status",
+        "z": "bd6025d0.7f0518",
+        "name": "",
+        "scope": [
+            "c974ee08.4cf47",
+            "e93d38a3.055f18",
+            "9ee511f3.9b6f2"
+        ],
+        "x": 200,
+        "y": 80,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "3b190132.4275ae",
+        "type": "subflow",
+        "name": "get-process-search-results",
+        "info": "Retrieves the process search results for a given job ID. Results will be sorted based on the sort parameter used when starting the search.\n\n### RBAC Permissions Required\n\n|Permission (.notation name)\t|Operation(s)|\n|---|---|\n|threathunter.events\t|READ|\n\n`msg.payload` should be a string of the `job_id` for which to get the results.\n\n[See the Documentation](https://developer.carbonblack.com/reference/carbon-black-cloud/cb-threathunter/latest/process-search-v2/#get-process-search-results)",
+        "category": "CBC Ent EDR",
+        "in": [
+            {
+                "x": 100,
+                "y": 140,
+                "wires": [
+                    {
+                        "id": "f3e279d5.c3bcb8"
+                    }
+                ]
+            }
+        ],
+        "out": [
+            {
+                "x": 1420,
+                "y": 100,
+                "wires": [
+                    {
+                        "id": "76beca24.b2bf24",
+                        "port": 0
+                    }
+                ]
+            },
+            {
+                "x": 1420,
+                "y": 180,
+                "wires": [
+                    {
+                        "id": "db047874.a54588",
+                        "port": 0
+                    }
+                ]
+            }
+        ],
+        "env": [],
+        "color": "#6eb43d",
+        "status": {
+            "x": 320,
+            "y": 80,
+            "wires": [
+                {
+                    "id": "de887ca0.acc9c",
+                    "port": 0
+                }
+            ]
+        }
+    },
+    {
+        "id": "ac46c94d.d99838",
+        "type": "http request",
+        "z": "3b190132.4275ae",
+        "name": "",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": false,
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "authType": "",
+        "x": 870,
+        "y": 140,
+        "wires": [
+            [
+                "b4b70b9.5689af8"
+            ]
+        ]
+    },
+    {
+        "id": "7cb052a.e4cc8ac",
+        "type": "function",
+        "z": "3b190132.4275ae",
+        "name": "Get Process Search Results",
+        "func": "node.status({\n    text: 'searching...',\n    fill: 'grey'\n});\n\nmsg.url = [msg.cb.url, 'api/investigate/v2/orgs', msg.cb.org_key, 'processes/search_jobs', msg.payload, 'results'].join('/');\n\nmsg.headers = {\n    // The ThreatHunter endpoints use the legacy API key\n    'X-Auth-Token': [msg.cb.custom_api_key, msg.cb.custom_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 640,
+        "y": 140,
+        "wires": [
+            [
+                "ac46c94d.d99838"
+            ]
+        ]
+    },
+    {
+        "id": "b4b70b9.5689af8",
+        "type": "switch",
+        "z": "3b190132.4275ae",
+        "name": "statusCode",
+        "property": "statusCode",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "200",
+                "vt": "num"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 1070,
+        "y": 140,
+        "wires": [
+            [
+                "76beca24.b2bf24"
+            ],
+            [
+                "db047874.a54588"
+            ]
+        ]
+    },
+    {
+        "id": "76beca24.b2bf24",
+        "type": "function",
+        "z": "3b190132.4275ae",
+        "name": "search finished?",
+        "func": "if (msg.payload.contacted == msg.payload.completed) {\n    node.status({\n        text: 'Search finished. Found ' + msg.payload.num_found + ' results',\n        fill: 'green'\n    });\n} else {\n    node.status({\n        text: 'Search not finished. Found ' + msg.payload.num_found + ' results',\n        fill: 'yellow'\n    });\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1280,
+        "y": 100,
+        "wires": [
+            []
+        ],
+        "outputLabels": [
+            "yes"
+        ]
+    },
+    {
+        "id": "db047874.a54588",
+        "type": "function",
+        "z": "3b190132.4275ae",
+        "name": "return error",
+        "func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1270,
+        "y": 180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "f3e279d5.c3bcb8",
+        "type": "function",
+        "z": "3b190132.4275ae",
+        "name": "set status",
+        "func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n}\n\nelse {\n    node.status({\n        fill: 'grey',\n        text: 'starting process search...'\n    });\n}\n\nmsg.delay = msg.cb.delay || 1;\n\nmsg.cb.temp = {};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 240,
+        "y": 140,
+        "wires": [
+            [
+                "7d2feb2d.1ac804"
+            ]
+        ]
+    },
+    {
+        "id": "7d2feb2d.1ac804",
+        "type": "delay",
+        "z": "3b190132.4275ae",
+        "name": "",
+        "pauseType": "delayv",
+        "timeout": "1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "x": 400,
+        "y": 140,
+        "wires": [
+            [
+                "7cb052a.e4cc8ac"
+            ]
+        ]
+    },
+    {
+        "id": "de887ca0.acc9c",
+        "type": "status",
+        "z": "3b190132.4275ae",
+        "name": "",
+        "scope": [
+            "76beca24.b2bf24",
+            "db047874.a54588",
+            "f3e279d5.c3bcb8"
+        ],
+        "x": 200,
+        "y": 80,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "88719de.3eb786",
+        "type": "subflow",
+        "name": "enriched-events-facet-search",
+        "info": "Creates an enriched events facet job. The results for the facet job may be requested using the job ID returned. This route will not request processes.\n\n### RBAC Permissions Required\n\n|Permission (.notation name)\t|Operation(s)|\n|---|---|\n|threathunter.events\t|READ|\n\nExample `msg.payload`:\n\n    {\n        \"query\": \"(event_id:4b792e9f8e4211ea9ea33516be44bafd)\",\n        \"terms\": {\n            \"fields\": [\n                \"event_type\",\n                \"process_name\",\n                \"process_effective_reputation\",\n                \"process_hash\",\n                \"device_name\",\n                \"process_username\",\n                \"parent_effective_reputation\",\n                \"ttp\",\n                \"netconn_location\"\n            ],\n            \"rows\": 50,\n            \"time_range\": {\n                \"start\": \"2020-05-01T14:48:03-07:00\"\n            },\n            \"start\": \"2020-05-01T14:48:03-07:00\"\n        }\n    }\n    \n[See the Documentation](https://developer.carbonblack.com/reference/carbon-black-cloud/cb-threathunter/latest/process-search-v2/#start-enriched-events-facet-job)\n",
+        "category": "CBC Ent EDR",
+        "in": [
+            {
+                "x": 120,
+                "y": 300,
+                "wires": [
+                    {
+                        "id": "ff08df63.cbf"
+                    }
+                ]
+            }
+        ],
+        "out": [
+            {
+                "x": 1360,
+                "y": 260,
+                "wires": [
+                    {
+                        "id": "7f6ada83.f14b84",
+                        "port": 0
+                    }
+                ]
+            },
+            {
+                "x": 1360,
+                "y": 320,
+                "wires": [
+                    {
+                        "id": "7e8f98c7.0328a8",
+                        "port": 0
+                    }
+                ]
+            }
+        ],
+        "env": [],
+        "color": "#6eb43d",
+        "outputLabels": [
+            "job_id",
+            "error"
+        ],
+        "status": {
+            "x": 340,
+            "y": 240,
+            "wires": [
+                {
+                    "id": "4ac909fe.f49be8",
+                    "port": 0
+                }
+            ]
+        }
+    },
+    {
+        "id": "ff08df63.cbf",
+        "type": "function",
+        "z": "88719de.3eb786",
+        "name": "set status",
+        "func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n    return;\n}\n\nelse {\n    node.status({\n        fill: 'grey',\n        text: 'starting enriched events facet search...'\n    });\n}\n\nmsg.delay = msg.cb.delay || 1;\n\nif (!msg.temp) {\n    msg.temp = {};\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 240,
+        "y": 300,
+        "wires": [
+            [
+                "4ade3e19.f573e"
+            ]
+        ]
+    },
+    {
+        "id": "4ade3e19.f573e",
+        "type": "delay",
+        "z": "88719de.3eb786",
+        "name": "",
+        "pauseType": "delayv",
+        "timeout": "1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "x": 410,
+        "y": 300,
+        "wires": [
+            [
+                "1da1b23c.4f69ce"
+            ]
+        ]
+    },
+    {
+        "id": "4ac909fe.f49be8",
+        "type": "status",
+        "z": "88719de.3eb786",
+        "name": "",
+        "scope": [
+            "ff08df63.cbf",
+            "7e8f98c7.0328a8",
+            "7f6ada83.f14b84"
+        ],
+        "x": 220,
+        "y": 240,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "1da1b23c.4f69ce",
+        "type": "function",
+        "z": "88719de.3eb786",
+        "name": "Start a Event Search Job",
+        "func": "msg.url = [msg.cb.url, 'api/investigate/v2/orgs', msg.cb.org_key, 'enriched_events/facet_jobs'].join('/');\n\nmsg.headers = {\n    // The ThreatHunter endpoints use the legacy API key\n    'X-Auth-Token': [msg.cb.custom_api_key, msg.cb.custom_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 630,
+        "y": 300,
+        "wires": [
+            [
+                "5d924c16.982674"
+            ]
+        ]
+    },
+    {
+        "id": "5d924c16.982674",
+        "type": "http request",
+        "z": "88719de.3eb786",
+        "name": "",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": false,
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "authType": "",
+        "x": 850,
+        "y": 300,
+        "wires": [
+            [
+                "405d0601.9d5338"
+            ]
+        ]
+    },
+    {
+        "id": "405d0601.9d5338",
+        "type": "switch",
+        "z": "88719de.3eb786",
+        "name": "statusCode",
+        "property": "statusCode",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "200",
+                "vt": "num"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 1030,
+        "y": 300,
+        "wires": [
+            [
+                "7f6ada83.f14b84"
+            ],
+            [
+                "7e8f98c7.0328a8"
+            ]
+        ]
+    },
+    {
+        "id": "7e8f98c7.0328a8",
+        "type": "function",
+        "z": "88719de.3eb786",
+        "name": "return error",
+        "func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1230,
+        "y": 320,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "7f6ada83.f14b84",
+        "type": "function",
+        "z": "88719de.3eb786",
+        "name": "return job_id",
+        "func": "node.status({\n    fill: 'green',\n    text: 'job_id: ' + msg.payload.job_id\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1230,
+        "y": 260,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "ec94876c.eca868",
+        "type": "subflow",
+        "name": "enriched-events-search-v2",
+        "info": "Sample `msg.payload`\n\n    {\n        \"query\": \"ttp:NETWORK_ACCESS \",\n        \"sort\": [\n            {\n                \"field\": \"device_timestamp\",\n                \"order\": \"asc\"\n            }\n        ],\n        \"fields\": [\n            \"event_time\",\n            \"event_id\",\n            \"event_type\",\n            \"org_id\",\n            \"ttp\",\n            \"device_id\",\n            \"device_internal_ip\",\n            \"device_name\",\n            \"alert_id\",\n            \"process_id\",\n            \"process_name\",\n            \"process_user\",\n            \"process_hash\",\n            \"process_guid\",\n            \"netconn_protocol\",\n            \"netconn_remote_ipv4\",\n            \"netconn_remote_ipv6\",\n            \"netconn_remote_port\",\n            \"netconn_local_ipv4\",\n            \"netconn_local_ipv6\",\n            \"netconn_local_port\",\n            \"netconn_domain\",\n            \"netconn_inbound\",\n            \"netconn_location\",\n            \"netconn_action\"\n        ],\n        \"start\": 0,\n        \"time_range\": {\n            \"end\": \"2020-04-21T00:00:00Z\",\n            \"start\": \"2020-04-19T00:00:00Z\"\n        }\n    }\n    \n[See the Documentation](https://developer.carbonblack.com/reference/carbon-black-cloud/cb-threathunter/latest/process-search-v2/#start-an-enriched-events-search-job)  ",
+        "category": "CBC Ent EDR",
+        "in": [
+            {
+                "x": 120,
+                "y": 140,
+                "wires": [
+                    {
+                        "id": "a6086483.2e9068"
+                    }
+                ]
+            }
+        ],
+        "out": [
+            {
+                "x": 1300,
+                "y": 100,
+                "wires": [
+                    {
+                        "id": "b8f2e173.f7cf2",
+                        "port": 0
+                    }
+                ]
+            },
+            {
+                "x": 1300,
+                "y": 180,
+                "wires": [
+                    {
+                        "id": "ad4928fa.3392d8",
+                        "port": 0
+                    }
+                ]
+            }
+        ],
+        "env": [],
+        "color": "#6eb43d",
+        "outputLabels": [
+            "job_id",
+            "results"
+        ],
+        "status": {
+            "x": 320,
+            "y": 80,
+            "wires": [
+                {
+                    "id": "79cad3f1.fd593c",
+                    "port": 0
+                }
+            ]
+        }
+    },
+    {
+        "id": "a6086483.2e9068",
+        "type": "function",
+        "z": "ec94876c.eca868",
+        "name": "set status",
+        "func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n}\n\nelse {\n    node.status({\n        fill: 'grey',\n        text: 'starting process search...'\n    });\n}\n\nmsg.delay = msg.cb.delay || 1;\n\nif (!msg.temp) {\n    msg.temp = {};\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 240,
+        "y": 140,
+        "wires": [
+            [
+                "ba22d24f.3833c"
+            ]
+        ]
+    },
+    {
+        "id": "ba22d24f.3833c",
+        "type": "delay",
+        "z": "ec94876c.eca868",
+        "name": "",
+        "pauseType": "delayv",
+        "timeout": "1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "x": 390,
+        "y": 140,
+        "wires": [
+            [
+                "28a51cdc.7b7b74"
+            ]
+        ]
+    },
+    {
+        "id": "79cad3f1.fd593c",
+        "type": "status",
+        "z": "ec94876c.eca868",
+        "name": "",
+        "scope": [
+            "a6086483.2e9068",
+            "ad4928fa.3392d8",
+            "b8f2e173.f7cf2"
+        ],
+        "x": 200,
+        "y": 80,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "28a51cdc.7b7b74",
+        "type": "function",
+        "z": "ec94876c.eca868",
+        "name": "Start a Event Search Job",
+        "func": "msg.url = [msg.cb.url, 'api/investigate/v2/orgs', msg.cb.org_key, 'enriched_events/search_jobs'].join('/');\n\nmsg.headers = {\n    // The ThreatHunter endpoints use the legacy API key\n    'X-Auth-Token': [msg.cb.custom_api_key, msg.cb.custom_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 590,
+        "y": 140,
+        "wires": [
+            [
+                "c5fb81d5.7e84d"
+            ]
+        ]
+    },
+    {
+        "id": "c5fb81d5.7e84d",
+        "type": "http request",
+        "z": "ec94876c.eca868",
+        "name": "",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": false,
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "authType": "",
+        "x": 810,
+        "y": 140,
+        "wires": [
+            [
+                "1442aff3.24461"
+            ]
+        ]
+    },
+    {
+        "id": "1442aff3.24461",
+        "type": "switch",
+        "z": "ec94876c.eca868",
+        "name": "",
+        "property": "statusCode",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "200",
+                "vt": "num"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 970,
+        "y": 140,
+        "wires": [
+            [
+                "b8f2e173.f7cf2"
+            ],
+            [
+                "ad4928fa.3392d8"
+            ]
+        ]
+    },
+    {
+        "id": "ad4928fa.3392d8",
+        "type": "function",
+        "z": "ec94876c.eca868",
+        "name": "return error",
+        "func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1150,
+        "y": 180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "b8f2e173.f7cf2",
+        "type": "function",
+        "z": "ec94876c.eca868",
+        "name": "return job_id",
+        "func": "node.status({\n    fill: 'green',\n    text: 'submitted query'\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1150,
+        "y": 100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "ba4e84d0.27ae58",
+        "type": "subflow",
+        "name": "start-process-search-job",
+        "info": "Creates a process search job. The results for the search job may be requested using the job ID returned. This route will not request facets.\n\nUse **get-process-search-results** to get the results.\n\n### RBAC Permissions Required\n\n|Permission (.notation name)\t|Operation(s)|\n|---|---|\n|threathunter.events\t|CREATE|\n\n> **Note:** See the [Process Search Fields](https://developer.carbonblack.com/reference/carbon-black-cloud/cb-threathunter/latest/process-search-fields/#process-search-fields) for details on how to populate the search query.\n\nSample `msg.payload`\n\n    {\n        \"query\": \"(event_id:c65ca5e15e4b11ea91710b30c57763c8)\",\n        \"time_range\": {\n            \"start\": \"2020-03-04T19:10:21.448Z\"\n        },\n        \"rows\": 10000,\n        \"fields\": [\n            \"*\",\n            \"document_guid\"\n        ],\n        \"sort\": [\n            {\n                \"field\": \"device_timestamp\",\n                \"order\": \"DESC\"\n            }\n        ]\n    }\n    \n[See the Documentation](https://developer.carbonblack.com/reference/carbon-black-cloud/cb-threathunter/latest/process-search-v2/#start-a-process-search-job)\n\n",
+        "category": "CBC Ent EDR",
+        "in": [
+            {
+                "x": 120,
+                "y": 140,
+                "wires": [
+                    {
+                        "id": "c27ca1cc.a5993"
+                    }
+                ]
+            }
+        ],
+        "out": [
+            {
+                "x": 1380,
+                "y": 120,
+                "wires": [
+                    {
+                        "id": "f91bb4cd.877ac8",
+                        "port": 0
+                    }
+                ]
+            },
+            {
+                "x": 1380,
+                "y": 180,
+                "wires": [
+                    {
+                        "id": "90e7a5d1.e17fc8",
+                        "port": 0
+                    }
+                ]
+            }
+        ],
+        "env": [],
+        "color": "#6eb43d",
+        "outputLabels": [
+            "job_id",
+            "incomplete search"
+        ],
+        "status": {
+            "x": 340,
+            "y": 80,
+            "wires": [
+                {
+                    "id": "6688779.bb97788",
+                    "port": 0
+                }
+            ]
+        }
+    },
+    {
+        "id": "2fe150a9.a24df",
+        "type": "function",
+        "z": "ba4e84d0.27ae58",
+        "name": "Start a Process Search Job",
+        "func": "msg.url = [msg.cb.url, 'api/investigate/v2/orgs', msg.cb.org_key, 'processes/search_jobs'].join('/');\n\nmsg.headers = {\n    // The ThreatHunter endpoints use the legacy API key\n    'X-Auth-Token': [msg.cb.custom_api_key, msg.cb.custom_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 640,
+        "y": 140,
+        "wires": [
+            [
+                "f8707d9c.22493"
+            ]
+        ]
+    },
+    {
+        "id": "f8707d9c.22493",
+        "type": "http request",
+        "z": "ba4e84d0.27ae58",
+        "name": "",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": false,
+        "url": "",
+        "tls": "",
+        "proxy": "",
+        "authType": "",
+        "x": 890,
+        "y": 140,
+        "wires": [
+            [
+                "ba220bb8.b7cd28"
+            ]
+        ]
+    },
+    {
+        "id": "ba220bb8.b7cd28",
+        "type": "switch",
+        "z": "ba4e84d0.27ae58",
+        "name": "",
+        "property": "statusCode",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "200",
+                "vt": "num"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 1050,
+        "y": 140,
+        "wires": [
+            [
+                "f91bb4cd.877ac8"
+            ],
+            [
+                "90e7a5d1.e17fc8"
+            ]
+        ]
+    },
+    {
+        "id": "c27ca1cc.a5993",
+        "type": "function",
+        "z": "ba4e84d0.27ae58",
+        "name": "set status",
+        "func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n}\n\nelse {\n    node.status({\n        fill: 'grey',\n        text: 'starting process search...'\n    });\n}\n\nmsg.delay = msg.cb.delay || 1;\n\nmsg.cb.temp = {};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 240,
+        "y": 140,
+        "wires": [
+            [
+                "5fd0313.9a3dbd"
+            ]
+        ]
+    },
+    {
+        "id": "90e7a5d1.e17fc8",
+        "type": "function",
+        "z": "ba4e84d0.27ae58",
+        "name": "return error",
+        "func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1230,
+        "y": 180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "5fd0313.9a3dbd",
+        "type": "delay",
+        "z": "ba4e84d0.27ae58",
+        "name": "",
+        "pauseType": "delayv",
+        "timeout": "1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "x": 400,
+        "y": 140,
+        "wires": [
+            [
+                "2fe150a9.a24df"
+            ]
+        ]
+    },
+    {
+        "id": "6688779.bb97788",
+        "type": "status",
+        "z": "ba4e84d0.27ae58",
+        "name": "",
+        "scope": [
+            "c27ca1cc.a5993",
+            "90e7a5d1.e17fc8",
+            "7cb052a.e4cc8ac",
+            "f91bb4cd.877ac8",
+            "76beca24.b2bf24"
+        ],
+        "x": 200,
+        "y": 80,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "f91bb4cd.877ac8",
+        "type": "function",
+        "z": "ba4e84d0.27ae58",
+        "name": "return job_id",
+        "func": "node.status({\n    fill: 'green',\n    text: 'job_id: ' + msg.payload.job_id\n});\n        \nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1230,
+        "y": 120,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "f67eec35.0acd3",
+        "type": "subflow",
+        "name": "get-all-feeds",
+        "info": "",
+        "category": "CBC Ent EDR",
+        "in": [
+            {
+                "x": 100,
+                "y": 140,
+                "wires": [
+                    {
+                        "id": "df292416.fc5b38"
+                    }
+                ]
+            }
+        ],
+        "out": [
+            {
+                "x": 1280,
+                "y": 100,
+                "wires": [
+                    {
+                        "id": "c4cc1651.e0ba68",
+                        "port": 0
+                    }
+                ]
+            },
+            {
+                "x": 1280,
+                "y": 180,
+                "wires": [
+                    {
+                        "id": "f0a00f.add7cff",
+                        "port": 0
+                    }
+                ]
+            }
+        ],
+        "env": [],
+        "color": "#6eb43d",
+        "icon": "node-red/join.svg",
+        "status": {
+            "x": 320,
+            "y": 80,
+            "wires": [
+                {
+                    "id": "58b087da.840178",
+                    "port": 0
+                }
+            ]
+        }
+    },
+    {
+        "id": "37779e43.a60a52",
+        "type": "function",
+        "z": "f67eec35.0acd3",
+        "name": "Build request",
+        "func": "msg.url = [msg.cb.url, 'threathunter/feedmgr/v2/orgs', msg.cb.org_key, 'feeds'].join('/');\n\nmsg.headers = {\n    // The ThreatHunter endpoints use the legacy API key\n    'X-Auth-Token': [msg.cb.custom_api_key, msg.cb.custom_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 610,
+        "y": 140,
+        "wires": [
+            [
+                "cca6ff3.6a697"
+            ]
+        ]
+    },
+    {
+        "id": "cca6ff3.6a697",
+        "type": "http request",
+        "z": "f67eec35.0acd3",
+        "name": "",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": false,
+        "url": "",
+        "tls": "",
+        "proxy": "",
+        "authType": "",
+        "x": 790,
+        "y": 140,
+        "wires": [
+            [
+                "d88ee3c6.8d907"
+            ]
+        ]
+    },
+    {
+        "id": "d88ee3c6.8d907",
+        "type": "switch",
+        "z": "f67eec35.0acd3",
+        "name": "",
+        "property": "statusCode",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "200",
+                "vt": "num"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 950,
+        "y": 140,
+        "wires": [
+            [
+                "c4cc1651.e0ba68"
+            ],
+            [
+                "f0a00f.add7cff"
+            ]
+        ]
+    },
+    {
+        "id": "df292416.fc5b38",
+        "type": "function",
+        "z": "f67eec35.0acd3",
+        "name": "set status",
+        "func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n}\n\nelse {\n    node.status({\n        fill: 'grey',\n        text: 'getting data...'\n    });\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 240,
+        "y": 140,
+        "wires": [
+            [
+                "b4ae24d7.3af018"
+            ]
+        ]
+    },
+    {
+        "id": "f0a00f.add7cff",
+        "type": "function",
+        "z": "f67eec35.0acd3",
+        "name": "set status",
+        "func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1140,
+        "y": 180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "b4ae24d7.3af018",
+        "type": "delay",
+        "z": "f67eec35.0acd3",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "x": 420,
+        "y": 140,
+        "wires": [
+            [
+                "37779e43.a60a52"
+            ]
+        ]
+    },
+    {
+        "id": "58b087da.840178",
+        "type": "status",
+        "z": "f67eec35.0acd3",
+        "name": "",
+        "scope": [
+            "df292416.fc5b38",
+            "f0a00f.add7cff",
+            "c4cc1651.e0ba68"
+        ],
+        "x": 200,
+        "y": 80,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "c4cc1651.e0ba68",
+        "type": "function",
+        "z": "f67eec35.0acd3",
+        "name": "set status",
+        "func": "node.status({\n    fill: 'green',\n    text: 'submitted query'\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1140,
+        "y": 100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "a8d4fd8d.2d318",
+        "type": "subflow",
+        "name": "get-feed-details",
+        "info": "`msg.payload` should be an integer of the feed ID.\n\nOutputs the raw JSON response.",
+        "category": "CBC Ent EDR",
+        "in": [
+            {
+                "x": 120,
+                "y": 140,
+                "wires": [
+                    {
+                        "id": "abf05f0d.69206"
+                    }
+                ]
+            }
+        ],
+        "out": [
+            {
+                "x": 1280,
+                "y": 100,
+                "wires": [
+                    {
+                        "id": "c28612b0.f1501",
+                        "port": 0
+                    }
+                ]
+            },
+            {
+                "x": 1280,
+                "y": 180,
+                "wires": [
+                    {
+                        "id": "109435.effa7bcb",
+                        "port": 0
+                    }
+                ]
+            }
+        ],
+        "env": [],
+        "color": "#6eb43d",
+        "icon": "node-red/join.svg",
+        "status": {
+            "x": 320,
+            "y": 80,
+            "wires": [
+                {
+                    "id": "d49f4735.c97098",
+                    "port": 0
+                }
+            ]
+        }
+    },
+    {
+        "id": "fbcfdbf4.b2cc58",
+        "type": "function",
+        "z": "a8d4fd8d.2d318",
+        "name": "Build request",
+        "func": "msg.url = [msg.cb.url, 'threathunter/feedmgr/v2/orgs', msg.cb.org_key, 'feeds', msg.payload].join('/');\n\nmsg.headers = {\n    // The ThreatHunter endpoints use the legacy API key\n    'X-Auth-Token': [msg.cb.custom_api_key, msg.cb.custom_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 610,
+        "y": 140,
+        "wires": [
+            [
+                "9ce20255.12653"
+            ]
+        ]
+    },
+    {
+        "id": "9ce20255.12653",
+        "type": "http request",
+        "z": "a8d4fd8d.2d318",
+        "name": "",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": false,
+        "url": "",
+        "tls": "",
+        "proxy": "",
+        "authType": "",
+        "x": 790,
+        "y": 140,
+        "wires": [
+            [
+                "b198c3ad.b8bab"
+            ]
+        ]
+    },
+    {
+        "id": "b198c3ad.b8bab",
+        "type": "switch",
+        "z": "a8d4fd8d.2d318",
+        "name": "",
+        "property": "statusCode",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "200",
+                "vt": "num"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 950,
+        "y": 140,
+        "wires": [
+            [
+                "c28612b0.f1501"
+            ],
+            [
+                "109435.effa7bcb"
+            ]
+        ]
+    },
+    {
+        "id": "abf05f0d.69206",
+        "type": "function",
+        "z": "a8d4fd8d.2d318",
+        "name": "set status",
+        "func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n}\n\nelse {\n    node.status({\n        fill: 'grey',\n        text: 'getting data...'\n    });\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 240,
+        "y": 140,
+        "wires": [
+            [
+                "4e40f3cb.f2990c"
+            ]
+        ]
+    },
+    {
+        "id": "109435.effa7bcb",
+        "type": "function",
+        "z": "a8d4fd8d.2d318",
+        "name": "set status",
+        "func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1140,
+        "y": 180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "4e40f3cb.f2990c",
+        "type": "delay",
+        "z": "a8d4fd8d.2d318",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "x": 420,
+        "y": 140,
+        "wires": [
+            [
+                "fbcfdbf4.b2cc58"
+            ]
+        ]
+    },
+    {
+        "id": "d49f4735.c97098",
+        "type": "status",
+        "z": "a8d4fd8d.2d318",
+        "name": "",
+        "scope": [
+            "abf05f0d.69206",
+            "109435.effa7bcb",
+            "c28612b0.f1501"
+        ],
+        "x": 200,
+        "y": 80,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "c28612b0.f1501",
+        "type": "function",
+        "z": "a8d4fd8d.2d318",
+        "name": "set status",
+        "func": "node.status({\n    fill: 'green',\n    text: 'submitted query'\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1140,
+        "y": 100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "7673d6bd.6715e8",
+        "type": "subflow",
+        "name": "replace-reports",
+        "info": "Expects `msg.cb.feed_id` to have an integer for the feed you want to update.\nSample `msg.payload`:\n\n    {\n        \"reports\": [\n            {\n                \"id\": \"sample-id-123\",\n                \"timestamp\": {{$timestamp}},\n                \"title\": \"Sample Title\",\n                \"description\": \"Sample Description.\",\n                \"severity\": 5,\n                \"link\": \"http://sample.com\",\n                \"iocs\": {\n                \t\"md5\": [\n                \t\t\"ABCDEF1234567890ABCDEF1234567890\"\n            \t\t],\n                \t\"ipv4\": [\n            \t\t\t\"50.62.230.1\"\n            \t\t],\n                \t\"dns\": [\n                \t\t\"everydayim.com\"\n            \t\t]\n                }\n            }\n        ]\n    }",
+        "category": "CBC Ent EDR",
+        "in": [
+            {
+                "x": 120,
+                "y": 140,
+                "wires": [
+                    {
+                        "id": "daf63013.18d2c"
+                    }
+                ]
+            }
+        ],
+        "out": [
+            {
+                "x": 1260,
+                "y": 100,
+                "wires": [
+                    {
+                        "id": "4d7a215b.82ceb",
+                        "port": 0
+                    }
+                ]
+            },
+            {
+                "x": 1260,
+                "y": 180,
+                "wires": [
+                    {
+                        "id": "d54ddc5b.38eca",
+                        "port": 0
+                    }
+                ]
+            }
+        ],
+        "env": [],
+        "color": "#6eb43d",
+        "icon": "node-red/join.svg",
+        "status": {
+            "x": 320,
+            "y": 80,
+            "wires": [
+                {
+                    "id": "4ce2b46b.72484c",
+                    "port": 0
+                }
+            ]
+        }
+    },
+    {
+        "id": "7ec0c3f7.6f93fc",
+        "type": "function",
+        "z": "7673d6bd.6715e8",
+        "name": "Build request",
+        "func": "msg.url = [msg.cb.url, 'threathunter/feedmgr/v2/orgs', msg.cb.org_key, 'feeds', msg.cb.feed_id, 'reports'].join('/');\n\nmsg.headers = {\n    // The ThreatHunter endpoints use the legacy API key\n    'X-Auth-Token': [msg.cb.custom_api_key, msg.cb.custom_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 610,
+        "y": 140,
+        "wires": [
+            [
+                "f1b330fd.ddf8e"
+            ]
+        ]
+    },
+    {
+        "id": "f1b330fd.ddf8e",
+        "type": "http request",
+        "z": "7673d6bd.6715e8",
+        "name": "",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": false,
+        "url": "",
+        "tls": "",
+        "proxy": "",
+        "authType": "",
+        "x": 790,
+        "y": 140,
+        "wires": [
+            [
+                "223c8d5b.7c3712"
+            ]
+        ]
+    },
+    {
+        "id": "223c8d5b.7c3712",
+        "type": "switch",
+        "z": "7673d6bd.6715e8",
+        "name": "",
+        "property": "statusCode",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "200",
+                "vt": "num"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 950,
+        "y": 140,
+        "wires": [
+            [
+                "4d7a215b.82ceb"
+            ],
+            [
+                "d54ddc5b.38eca"
+            ]
+        ]
+    },
+    {
+        "id": "daf63013.18d2c",
+        "type": "function",
+        "z": "7673d6bd.6715e8",
+        "name": "set status",
+        "func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n}\n\nelse {\n    node.status({\n        fill: 'grey',\n        text: 'getting data...'\n    });\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 240,
+        "y": 140,
+        "wires": [
+            [
+                "acf0c146.e965"
+            ]
+        ]
+    },
+    {
+        "id": "d54ddc5b.38eca",
+        "type": "function",
+        "z": "7673d6bd.6715e8",
+        "name": "set status",
+        "func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1140,
+        "y": 180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "acf0c146.e965",
+        "type": "delay",
+        "z": "7673d6bd.6715e8",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "x": 420,
+        "y": 140,
+        "wires": [
+            [
+                "7ec0c3f7.6f93fc"
+            ]
+        ]
+    },
+    {
+        "id": "4ce2b46b.72484c",
+        "type": "status",
+        "z": "7673d6bd.6715e8",
+        "name": "",
+        "scope": [
+            "daf63013.18d2c",
+            "d54ddc5b.38eca",
+            "4d7a215b.82ceb"
+        ],
+        "x": 200,
+        "y": 80,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "4d7a215b.82ceb",
+        "type": "function",
+        "z": "7673d6bd.6715e8",
+        "name": "set status",
+        "func": "node.status({\n    fill: 'green',\n    text: 'submitted query'\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1140,
+        "y": 100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "dda63abb.9bd258",
+        "type": "subflow",
+        "name": "create-new-feed",
+        "info": "Sample `msg.payload`:\n\n    {\n        \"feedinfo\": {\n            \"name\": \"Test Feed\",\n            \"owner\": \"7DESJ9GN\",\n            \"provider_url\": \"https://mynewfeed.io\",\n            \"summary\": \"My summary...\",\n            \"category\": \"Testing\",\n            \"source_label\": null,\n            \"access\": \"private\",\n            \"id\": \"ituBeDltRfGyf46dOWukMA\"\n        },\n        \"reports\": [\n            {\n                \"id\": \"random-id-12345\",\n                \"timestamp\": 1561485879,\n                \"title\": \"This is my super awesome test feed\",\n                \"description\": \"Pretty sweet, huh?\",\n                \"severity\": 10,\n                \"link\": \"\",\n                \"iocs\": {\n                    \"md5\": [],\n                    \"ipv4\": [\n                        \"138.68.199.111\",\n                        \"178.128.243.34\"\n                    ],\n                    \"dns\": [\n                        \"tothewater.com\",\n                        \"cute-roulette.com\"\n                    ]\n                }\n            }\n        ]\n    }",
+        "category": "CBC Ent EDR",
+        "in": [
+            {
+                "x": 100,
+                "y": 140,
+                "wires": [
+                    {
+                        "id": "c686016.f8e6d"
+                    }
+                ]
+            }
+        ],
+        "out": [
+            {
+                "x": 1280,
+                "y": 100,
+                "wires": [
+                    {
+                        "id": "f19462b6.5b9e3",
+                        "port": 0
+                    }
+                ]
+            },
+            {
+                "x": 1280,
+                "y": 180,
+                "wires": [
+                    {
+                        "id": "fbbba563.c08478",
+                        "port": 0
+                    }
+                ]
+            }
+        ],
+        "env": [],
+        "color": "#6eb43d",
+        "icon": "node-red/join.svg",
+        "status": {
+            "x": 340,
+            "y": 80,
+            "wires": [
+                {
+                    "id": "7423c9c2.7d1318",
+                    "port": 0
+                }
+            ]
+        }
+    },
+    {
+        "id": "2e55e548.ca0c2a",
+        "type": "function",
+        "z": "dda63abb.9bd258",
+        "name": "Build request",
+        "func": "msg.url = [msg.cb.url, 'threathunter/feedmgr/v2/orgs', msg.cb.org_key, 'feeds'].join('/');\n\nmsg.headers = {\n    // The ThreatHunter endpoints use the legacy API key\n    'X-Auth-Token': [msg.cb.custom_api_key, msg.cb.custom_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 610,
+        "y": 140,
+        "wires": [
+            [
+                "4167047a.726e6c"
+            ]
+        ]
+    },
+    {
+        "id": "4167047a.726e6c",
+        "type": "http request",
+        "z": "dda63abb.9bd258",
+        "name": "",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": false,
+        "url": "",
+        "tls": "",
+        "proxy": "",
+        "authType": "",
+        "x": 790,
+        "y": 140,
+        "wires": [
+            [
+                "460dc053.382"
+            ]
+        ]
+    },
+    {
+        "id": "460dc053.382",
+        "type": "switch",
+        "z": "dda63abb.9bd258",
+        "name": "",
+        "property": "statusCode",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "200",
+                "vt": "num"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 950,
+        "y": 140,
+        "wires": [
+            [
+                "f19462b6.5b9e3"
+            ],
+            [
+                "fbbba563.c08478"
+            ]
+        ]
+    },
+    {
+        "id": "c686016.f8e6d",
+        "type": "function",
+        "z": "dda63abb.9bd258",
+        "name": "set status",
+        "func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n}\n\nelse {\n    node.status({\n        fill: 'grey',\n        text: 'getting data...'\n    });\n}\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 240,
+        "y": 140,
+        "wires": [
+            [
+                "de91677b.94f808"
+            ]
+        ]
+    },
+    {
+        "id": "fbbba563.c08478",
+        "type": "function",
+        "z": "dda63abb.9bd258",
+        "name": "set status",
+        "func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1140,
+        "y": 180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "de91677b.94f808",
+        "type": "delay",
+        "z": "dda63abb.9bd258",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "x": 420,
+        "y": 140,
+        "wires": [
+            [
+                "2e55e548.ca0c2a"
+            ]
+        ]
+    },
+    {
+        "id": "7423c9c2.7d1318",
+        "type": "status",
+        "z": "dda63abb.9bd258",
+        "name": "",
+        "scope": [
+            "c686016.f8e6d",
+            "fbbba563.c08478",
+            "f19462b6.5b9e3"
+        ],
+        "x": 200,
+        "y": 80,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "f19462b6.5b9e3",
+        "type": "function",
+        "z": "dda63abb.9bd258",
+        "name": "set status",
+        "func": "node.status({\n    fill: 'green',\n    text: 'submitted query'\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1140,
+        "y": 100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "6e754fbf.28f2a",
+        "type": "subflow",
+        "name": "ubs-retrieve-metadata",
+        "info": "This data is specific to the binary and is not a function of organization data. Retrieve Metadata for a Binary This API returns all of the metadata for the specified binary identified by the SHA-256 hash.\n\n`msg.payload` should be a SHA256 string.\n\nOutput `msg.payload` will be an object of the file summary if one was found.\n\n---\n\n[See the Documentation](https://developer.carbonblack.com/reference/cb-threathunter/latest/universal-binary-store-api/#retrieve-metadata)",
+        "category": "CBC Ent EDR",
+        "in": [
+            {
+                "x": 120,
+                "y": 140,
+                "wires": [
+                    {
+                        "id": "5bdd341c.ef47dc"
+                    }
+                ]
+            }
+        ],
+        "out": [
+            {
+                "x": 1440,
+                "y": 100,
+                "wires": [
+                    {
+                        "id": "b4d67898.ef1eb8",
+                        "port": 0
+                    }
+                ]
+            },
+            {
+                "x": 1440,
+                "y": 180,
+                "wires": [
+                    {
+                        "id": "3a08e1a4.ce217e",
+                        "port": 0
+                    }
+                ]
+            }
+        ],
+        "env": [],
+        "color": "#6eb43d",
+        "icon": "node-red/file.svg",
+        "status": {
+            "x": 320,
+            "y": 80,
+            "wires": [
+                {
+                    "id": "76b59785.a7d5e8",
+                    "port": 0
+                }
+            ]
+        }
+    },
+    {
+        "id": "19d237a0.0c3db8",
+        "type": "function",
+        "z": "6e754fbf.28f2a",
+        "name": "build http request",
+        "func": "msg.url = [msg.cb.url, 'ubs/v1/orgs', msg.cb.org_key, 'sha256', msg.payload, 'metadata'].join('/');\n\nmsg.headers = {\n    'X-Auth-Token': [msg.cb.custom_api_key, msg.cb.custom_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 610,
+        "y": 140,
+        "wires": [
+            [
+                "e62938df.d36268"
+            ]
+        ]
+    },
+    {
+        "id": "e62938df.d36268",
+        "type": "http request",
+        "z": "6e754fbf.28f2a",
+        "name": "get process summary",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": false,
+        "url": "",
+        "tls": "",
+        "proxy": "",
+        "authType": "",
+        "x": 860,
+        "y": 140,
+        "wires": [
+            [
+                "b3d1b498.a1b678"
+            ]
+        ]
+    },
+    {
+        "id": "b3d1b498.a1b678",
+        "type": "switch",
+        "z": "6e754fbf.28f2a",
+        "name": "status code",
+        "property": "statusCode",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "200",
+                "vt": "num"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 1070,
+        "y": 140,
+        "wires": [
+            [
+                "b4d67898.ef1eb8"
+            ],
+            [
+                "3a08e1a4.ce217e"
+            ]
+        ]
+    },
+    {
+        "id": "5bdd341c.ef47dc",
+        "type": "function",
+        "z": "6e754fbf.28f2a",
+        "name": "set status",
+        "func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n    return;\n}\n\nnode.status({\n    fill: 'grey',\n    text: 'getting metadata...'\n});\n\nmsg.delay = msg.cb.delay;\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 240,
+        "y": 140,
+        "wires": [
+            [
+                "8e3269e0.40e698"
+            ]
+        ]
+    },
+    {
+        "id": "3a08e1a4.ce217e",
+        "type": "function",
+        "z": "6e754fbf.28f2a",
+        "name": "set status",
+        "func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1280,
+        "y": 180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "8e3269e0.40e698",
+        "type": "delay",
+        "z": "6e754fbf.28f2a",
+        "name": "delay",
+        "pauseType": "delayv",
+        "timeout": "1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "x": 410,
+        "y": 140,
+        "wires": [
+            [
+                "19d237a0.0c3db8"
+            ]
+        ]
+    },
+    {
+        "id": "76b59785.a7d5e8",
+        "type": "status",
+        "z": "6e754fbf.28f2a",
+        "name": "",
+        "scope": [
+            "5bdd341c.ef47dc",
+            "3a08e1a4.ce217e",
+            "b4d67898.ef1eb8"
+        ],
+        "x": 200,
+        "y": 80,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "b4d67898.ef1eb8",
+        "type": "function",
+        "z": "6e754fbf.28f2a",
+        "name": "set status",
+        "func": "node.status({\n    fill: 'green',\n    text: 'pulled metadata'\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1280,
+        "y": 100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "b746de58.ad643",
+        "type": "subflow",
+        "name": "ubs-download-file",
+        "info": "This API provides a means to download files. The files are able to be downloaded via AWS S3 pre-signed URLs. The URLs enables the client to perform a GET on the provided URLs and download the files. The links will automatically expire after one hour, unless a different expiration time is requested.\n\n> **CAUTION** - Anyone who has these links will be able to download the files until the requested expiration time (default one hour after the request). Ensure that care is taken when utilizing this API.\n\nSample `msg.payload`:\n\n    {\n        \"sha256\": [\"SHA256HERE\"],\n        \"expiration_seconds\": 300\n    }\n\n---\n\n[See the Documentation](https://developer.carbonblack.com/reference/cb-threathunter/latest/universal-binary-store-api/#download)",
+        "category": "CBC Ent EDR",
+        "in": [
+            {
+                "x": 100,
+                "y": 140,
+                "wires": [
+                    {
+                        "id": "681af9ca.def608"
+                    }
+                ]
+            }
+        ],
+        "out": [
+            {
+                "x": 1440,
+                "y": 100,
+                "wires": [
+                    {
+                        "id": "90278e6a.9de5e",
+                        "port": 0
+                    }
+                ]
+            },
+            {
+                "x": 1440,
+                "y": 180,
+                "wires": [
+                    {
+                        "id": "20d71271.87e76e",
+                        "port": 0
+                    }
+                ]
+            }
+        ],
+        "env": [],
+        "color": "#6eb43d",
+        "icon": "node-red/file.svg",
+        "status": {
+            "x": 320,
+            "y": 80,
+            "wires": [
+                {
+                    "id": "4666d50c.88eccc",
+                    "port": 0
+                }
+            ]
+        }
+    },
+    {
+        "id": "ddef2339.2d6d9",
+        "type": "function",
+        "z": "b746de58.ad643",
+        "name": "build http request",
+        "func": "msg.url = [msg.cb.url, 'ubs/v1/orgs', msg.cb.org_key, 'file/_download'].join('/');\n\nmsg.headers = {\n    'X-Auth-Token': [msg.cb.custom_api_key, msg.cb.custom_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 610,
+        "y": 140,
+        "wires": [
+            [
+                "fda08f69.ebb2"
+            ]
+        ]
+    },
+    {
+        "id": "fda08f69.ebb2",
+        "type": "http request",
+        "z": "b746de58.ad643",
+        "name": "get process summary",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": false,
+        "url": "",
+        "tls": "",
+        "proxy": "",
+        "authType": "",
+        "x": 860,
+        "y": 140,
+        "wires": [
+            [
+                "7099b8a2.3b7018"
+            ]
+        ]
+    },
+    {
+        "id": "7099b8a2.3b7018",
+        "type": "switch",
+        "z": "b746de58.ad643",
+        "name": "status code",
+        "property": "statusCode",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "200",
+                "vt": "num"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 1070,
+        "y": 140,
+        "wires": [
+            [
+                "90278e6a.9de5e"
+            ],
+            [
+                "20d71271.87e76e"
+            ]
+        ]
+    },
+    {
+        "id": "681af9ca.def608",
+        "type": "function",
+        "z": "b746de58.ad643",
+        "name": "set status",
+        "func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n    return;\n}\n\nnode.status({\n    fill: 'grey',\n    text: 'downloading file...'\n});\n\nmsg.delay = msg.cb.delay;\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 240,
+        "y": 140,
+        "wires": [
+            [
+                "e3560f57.542af"
+            ]
+        ]
+    },
+    {
+        "id": "20d71271.87e76e",
+        "type": "function",
+        "z": "b746de58.ad643",
+        "name": "set status",
+        "func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1280,
+        "y": 180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "e3560f57.542af",
+        "type": "delay",
+        "z": "b746de58.ad643",
+        "name": "delay",
+        "pauseType": "delayv",
+        "timeout": "1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "x": 410,
+        "y": 140,
+        "wires": [
+            [
+                "ddef2339.2d6d9"
+            ]
+        ]
+    },
+    {
+        "id": "4666d50c.88eccc",
+        "type": "status",
+        "z": "b746de58.ad643",
+        "name": "",
+        "scope": [
+            "681af9ca.def608",
+            "20d71271.87e76e",
+            "90278e6a.9de5e"
+        ],
+        "x": 200,
+        "y": 80,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "90278e6a.9de5e",
+        "type": "function",
+        "z": "b746de58.ad643",
+        "name": "set status",
+        "func": "node.status({\n    fill: 'green',\n    text: 'download ready'\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1280,
+        "y": 100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "b4879a8e.249268",
+        "type": "subflow",
+        "name": "ubs-file-path-input",
+        "info": "`msg.payload` is expected to be a string of a sha256.\n\nOptionally you can provide `msg.params` with the number of `rows` you want to return.\n\nSample `msg.params`:\n\n    {\n        \"rows\": 100\n    }",
+        "category": "CBC Ent EDR",
+        "in": [
+            {
+                "x": 100,
+                "y": 140,
+                "wires": [
+                    {
+                        "id": "14bfe438.881d7c"
+                    }
+                ]
+            }
+        ],
+        "out": [
+            {
+                "x": 1420,
+                "y": 100,
+                "wires": [
+                    {
+                        "id": "94bb2184.ab1ba",
+                        "port": 0
+                    }
+                ]
+            },
+            {
+                "x": 1420,
+                "y": 180,
+                "wires": [
+                    {
+                        "id": "6c33ef56.bf598",
+                        "port": 0
+                    }
+                ]
+            }
+        ],
+        "env": [],
+        "color": "#6eb43d",
+        "icon": "node-red/file.svg",
+        "status": {
+            "x": 340,
+            "y": 80,
+            "wires": [
+                {
+                    "id": "d5d18c75.59211",
+                    "port": 0
+                }
+            ]
+        }
+    },
+    {
+        "id": "2a17d812.eb5848",
+        "type": "function",
+        "z": "b4879a8e.249268",
+        "name": "build http request",
+        "func": "msg.url = [msg.cb.url, 'ubs/v1/orgs', msg.cb.org_key, 'sha256', msg.payload, 'summary/file_path'].join('/');\n\nmsg.headers = {\n    'X-Auth-Token': [msg.cb.custom_api_key, msg.cb.custom_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 610,
+        "y": 140,
+        "wires": [
+            [
+                "dce82345.cc43d"
+            ]
+        ]
+    },
+    {
+        "id": "dce82345.cc43d",
+        "type": "http request",
+        "z": "b4879a8e.249268",
+        "name": "get process summary",
+        "method": "POST",
+        "ret": "obj",
+        "paytoqs": false,
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "authType": "",
+        "x": 860,
+        "y": 140,
+        "wires": [
+            [
+                "d399ae4a.f8c2f"
+            ]
+        ]
+    },
+    {
+        "id": "d399ae4a.f8c2f",
+        "type": "switch",
+        "z": "b4879a8e.249268",
+        "name": "status code",
+        "property": "statusCode",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "200",
+                "vt": "num"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 1070,
+        "y": 140,
+        "wires": [
+            [
+                "94bb2184.ab1ba"
+            ],
+            [
+                "6c33ef56.bf598"
+            ]
+        ]
+    },
+    {
+        "id": "14bfe438.881d7c",
+        "type": "function",
+        "z": "b4879a8e.249268",
+        "name": "set status",
+        "func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n    return;\n}\n\nnode.status({\n    fill: 'grey',\n    text: 'finding file paths...'\n});\n\nmsg.delay = msg.cb.delay;\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 240,
+        "y": 140,
+        "wires": [
+            [
+                "83756df8.6f402"
+            ]
+        ]
+    },
+    {
+        "id": "6c33ef56.bf598",
+        "type": "function",
+        "z": "b4879a8e.249268",
+        "name": "set status",
+        "func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1280,
+        "y": 180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "83756df8.6f402",
+        "type": "delay",
+        "z": "b4879a8e.249268",
+        "name": "delay",
+        "pauseType": "delayv",
+        "timeout": "1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "x": 410,
+        "y": 140,
+        "wires": [
+            [
+                "2a17d812.eb5848"
+            ]
+        ]
+    },
+    {
+        "id": "d5d18c75.59211",
+        "type": "status",
+        "z": "b4879a8e.249268",
+        "name": "",
+        "scope": [
+            "14bfe438.881d7c",
+            "6c33ef56.bf598",
+            "94bb2184.ab1ba"
+        ],
+        "x": 200,
+        "y": 80,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "94bb2184.ab1ba",
+        "type": "function",
+        "z": "b4879a8e.249268",
+        "name": "set status",
+        "func": "node.status({\n    fill: 'green',\n    text: 'found file paths'\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1280,
+        "y": 100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "5885b9e1.cd2488",
+        "type": "subflow",
+        "name": "ubs-request-signature",
+        "info": "`msg.payload` is expected to be a string of a sha256.\n\nOptionally you can provide `msg.params` with the number of `rows` you want to return.\n\nSample `msg.params`:\n\n    {\n        \"rows\": 100\n    }",
+        "category": "CBC Ent EDR",
+        "in": [
+            {
+                "x": 120,
+                "y": 140,
+                "wires": [
+                    {
+                        "id": "74f4a5.57503b5c"
+                    }
+                ]
+            }
+        ],
+        "out": [
+            {
+                "x": 1420,
+                "y": 100,
+                "wires": [
+                    {
+                        "id": "542b51bb.a8c87",
+                        "port": 0
+                    }
+                ]
+            },
+            {
+                "x": 1420,
+                "y": 180,
+                "wires": [
+                    {
+                        "id": "9a67f4db.32abe8",
+                        "port": 0
+                    }
+                ]
+            }
+        ],
+        "env": [],
+        "color": "#6eb43d",
+        "icon": "node-red/file.svg",
+        "status": {
+            "x": 320,
+            "y": 80,
+            "wires": [
+                {
+                    "id": "77362026.ee1df",
+                    "port": 0
+                }
+            ]
+        }
+    },
+    {
+        "id": "57bf787a.824b88",
+        "type": "function",
+        "z": "5885b9e1.cd2488",
+        "name": "build http request",
+        "func": "msg.url = [msg.cb.url, 'ubs/v1/orgs', msg.cb.org_key, 'sha256', msg.payload, 'summary/signature'].join('/');\n\nmsg.headers = {\n    'X-Auth-Token': [msg.cb.custom_api_key, msg.cb.custom_api_id].join('/'),\n    'Content-Type': 'application/json'\n};\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 610,
+        "y": 140,
+        "wires": [
+            [
+                "a52acd23.9f2de"
+            ]
+        ]
+    },
+    {
+        "id": "a52acd23.9f2de",
+        "type": "http request",
+        "z": "5885b9e1.cd2488",
+        "name": "get process summary",
+        "method": "GET",
+        "ret": "obj",
+        "paytoqs": false,
+        "url": "",
+        "tls": "",
+        "persist": false,
+        "proxy": "",
+        "authType": "",
+        "x": 860,
+        "y": 140,
+        "wires": [
+            [
+                "f775f20b.c9067"
+            ]
+        ]
+    },
+    {
+        "id": "f775f20b.c9067",
+        "type": "switch",
+        "z": "5885b9e1.cd2488",
+        "name": "status code",
+        "property": "statusCode",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "200",
+                "vt": "num"
+            },
+            {
+                "t": "else"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 2,
+        "x": 1070,
+        "y": 140,
+        "wires": [
+            [
+                "542b51bb.a8c87"
+            ],
+            [
+                "9a67f4db.32abe8"
+            ]
+        ]
+    },
+    {
+        "id": "74f4a5.57503b5c",
+        "type": "function",
+        "z": "5885b9e1.cd2488",
+        "name": "set status",
+        "func": "if (!msg.cb) {\n    node.status({\n        fill: 'red',\n        text: 'cb not instantiated'\n    });\n    return;\n}\n\nnode.status({\n    fill: 'grey',\n    text: 'requesting signature...'\n});\n\nmsg.delay = msg.cb.delay;\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 240,
+        "y": 140,
+        "wires": [
+            [
+                "fe634cc8.e19fe"
+            ]
+        ]
+    },
+    {
+        "id": "9a67f4db.32abe8",
+        "type": "function",
+        "z": "5885b9e1.cd2488",
+        "name": "set status",
+        "func": "node.status({\n    fill: 'red',\n    shape: 'ring',\n    text: [msg.statusCode, msg.payload.message].join(': ')\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1280,
+        "y": 180,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "fe634cc8.e19fe",
+        "type": "delay",
+        "z": "5885b9e1.cd2488",
+        "name": "delay",
+        "pauseType": "delayv",
+        "timeout": "1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "x": 410,
+        "y": 140,
+        "wires": [
+            [
+                "57bf787a.824b88"
+            ]
+        ]
+    },
+    {
+        "id": "77362026.ee1df",
+        "type": "status",
+        "z": "5885b9e1.cd2488",
+        "name": "",
+        "scope": [
+            "74f4a5.57503b5c",
+            "9a67f4db.32abe8",
+            "542b51bb.a8c87"
+        ],
+        "x": 200,
+        "y": 80,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "542b51bb.a8c87",
+        "type": "function",
+        "z": "5885b9e1.cd2488",
+        "name": "set status",
+        "func": "node.status({\n    fill: 'green',\n    text: 'found signature'\n});\n\nreturn msg;",
+        "outputs": 1,
+        "noerr": 0,
+        "x": 1280,
+        "y": 100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "1e41e092.1e9d9f",
+        "type": "tab",
+        "label": "VMware Carbon Black Cloud Enterprise EDR",
+        "disabled": false,
+        "info": ""
+    },
+    {
+        "id": "e1ee78f4.1b2768",
+        "type": "subflow:5885b9e1.cd2488",
+        "z": "1e41e092.1e9d9f",
+        "name": "",
+        "x": 260,
+        "y": 160,
+        "wires": [
+            [],
+            []
+        ]
+    },
+    {
+        "id": "86a2aef2.93f04",
+        "type": "subflow:b4879a8e.249268",
+        "z": "1e41e092.1e9d9f",
+        "name": "",
+        "x": 250,
+        "y": 200,
+        "wires": [
+            [],
+            []
+        ]
+    },
+    {
+        "id": "4bb6d25a.a8b8dc",
+        "type": "subflow:b746de58.ad643",
+        "z": "1e41e092.1e9d9f",
+        "name": "",
+        "x": 250,
+        "y": 240,
+        "wires": [
+            [],
+            []
+        ]
+    },
+    {
+        "id": "c08b321b.7dc52",
+        "type": "subflow:6e754fbf.28f2a",
+        "z": "1e41e092.1e9d9f",
+        "name": "",
+        "x": 260,
+        "y": 280,
+        "wires": [
+            [],
+            []
+        ]
+    },
+    {
+        "id": "202f2757.04d648",
+        "type": "subflow:dda63abb.9bd258",
+        "z": "1e41e092.1e9d9f",
+        "name": "",
+        "x": 240,
+        "y": 320,
+        "wires": [
+            [],
+            []
+        ]
+    },
+    {
+        "id": "b3026ea7.9914f",
+        "type": "subflow:7673d6bd.6715e8",
+        "z": "1e41e092.1e9d9f",
+        "name": "",
+        "x": 240,
+        "y": 360,
+        "wires": [
+            [],
+            []
+        ]
+    },
+    {
+        "id": "bcc01660.1d6c08",
+        "type": "subflow:a8d4fd8d.2d318",
+        "z": "1e41e092.1e9d9f",
+        "name": "",
+        "x": 240,
+        "y": 400,
+        "wires": [
+            [],
+            []
+        ]
+    },
+    {
+        "id": "f0096dff.a61c2",
+        "type": "subflow:f67eec35.0acd3",
+        "z": "1e41e092.1e9d9f",
+        "name": "",
+        "x": 230,
+        "y": 440,
+        "wires": [
+            [],
+            []
+        ]
+    },
+    {
+        "id": "1dab8aa3.a80325",
+        "type": "subflow:ba4e84d0.27ae58",
+        "z": "1e41e092.1e9d9f",
+        "name": "",
+        "x": 270,
+        "y": 480,
+        "wires": [
+            [],
+            []
+        ]
+    },
+    {
+        "id": "2596c791.431568",
+        "type": "subflow:ec94876c.eca868",
+        "z": "1e41e092.1e9d9f",
+        "name": "",
+        "x": 280,
+        "y": 520,
+        "wires": [
+            [],
+            []
+        ]
+    },
+    {
+        "id": "be2d7d0e.10058",
+        "type": "subflow:88719de.3eb786",
+        "z": "1e41e092.1e9d9f",
+        "name": "",
+        "x": 290,
+        "y": 560,
+        "wires": [
+            [],
+            []
+        ]
+    },
+    {
+        "id": "59501cf6.c7bfd4",
+        "type": "subflow:3b190132.4275ae",
+        "z": "1e41e092.1e9d9f",
+        "name": "",
+        "x": 280,
+        "y": 600,
+        "wires": [
+            [],
+            []
+        ]
+    },
+    {
+        "id": "5bb59b7a.355cb4",
+        "type": "subflow:bd6025d0.7f0518",
+        "z": "1e41e092.1e9d9f",
+        "name": "",
+        "x": 300,
+        "y": 640,
+        "wires": [
+            [],
+            []
+        ]
+    },
+    {
+        "id": "d82481b5.a9ea3",
+        "type": "subflow:384f9022.55b3a",
+        "z": "1e41e092.1e9d9f",
+        "name": "",
+        "x": 300,
+        "y": 680,
+        "wires": [
+            [],
+            []
+        ]
+    }
+]
